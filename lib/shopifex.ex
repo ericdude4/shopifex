@@ -1,8 +1,8 @@
 defmodule Shopifex do
   @moduledoc """
-  # Welcome to Shopifex! All configuration options are required
+  # Welcome to Shopifex!
 
-  ## Configuration
+  ## Configuration (All configuration options are required)
   * `:app_name` - This gets used in the Shopifex provided app installation page
   * `:repo` - The Ecto.Repo for your application
   * `:shop_schema` - Your Ecto.Schema that must have :url, :scopes, and :access_token properties. This is used to install and load stores into the session
