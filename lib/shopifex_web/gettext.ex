@@ -19,6 +19,8 @@ defmodule ShopifexWeb.Gettext do
       dgettext("errors", "Here is the error message to translate")
 
   See the [Gettext Docs](https://hexdocs.pm/gettext) for detailed usage.
+
+  Please help me internationalize this package!
   """
   use Gettext, otp_app: :shopifex
 end

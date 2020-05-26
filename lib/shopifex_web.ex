@@ -1,6 +1,6 @@
 defmodule ShopifexWeb do
   @moduledoc """
-  The entrypoint for defining your web interface, such
+  The entrypoint for shopifex web interface, such
   as controllers, views, channels and so on.
 
   This can be used in your application as:
@@ -38,22 +38,6 @@ defmodule ShopifexWeb do
 
       # Include shared imports and aliases for views
       unquote(view_helpers())
-    end
-  end
-
-  def router do
-    quote do
-      use Phoenix.Router
-
-      import Plug.Conn
-      import Phoenix.Controller
-    end
-  end
-
-  def channel do
-    quote do
-      use Phoenix.Channel
-      import ShopifexWeb.Gettext
     end
   end
 

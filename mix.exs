@@ -8,7 +8,28 @@ defmodule Shopifex.MixProject do
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
-      deps: deps()
+      deps: deps(),
+
+      # Hex
+      description: "Phoenix boilerplate for Shopify Embedded App SDK",
+      package: [
+        maintainers: ["Eric Froese"],
+        licenses: ["Apache-2.0"],
+        links: %{
+          "GitHub" => "https://github.com/ericdude4/shopifex",
+          "ericfroese.ca" => "https://ericfroese.ca"
+        }
+      ],
+
+      # Docs
+      name: "Shopifex",
+      source_url: "https://github.com/ericdude4/shopifex",
+      homepage_url: "https://github.com/ericdude4/shopifex",
+      docs: [
+        # The main page in the docs
+        main: "Shopifex",
+        extras: ["README.md"]
+      ]
     ]
   end
 
@@ -30,7 +51,8 @@ defmodule Shopifex.MixProject do
       {:gettext, "~> 0.11"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
-      {:shopify, "~> 0.4"}
+      {:shopify, "~> 0.4"},
+      {:ex_doc, "~> 0.14", only: :dev, runtime: false}
     ]
   end
 end
