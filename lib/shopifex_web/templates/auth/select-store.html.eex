@@ -1,0 +1,52 @@
+<form method="get" action="/auth">
+  <div style="--top-bar-background:#00848e; --top-bar-background-lighter:#1d9ba4; --top-bar-color:#f9fafb; --p-frame-offset:0px;">
+    <div class="Polaris-EmptyState Polaris-EmptyState--withinPage">
+      <div class="Polaris-EmptyState__Section">
+        <div class="Polaris-EmptyState__DetailsContainer">
+          <div class="Polaris-EmptyState__Details">
+            <div class="Polaris-TextContainer">
+              <p class="Polaris-DisplayText Polaris-DisplayText--sizeMedium">Install <%= Application.fetch_env!(:shopifex, :app_name) %> on your Shopify store.</p>
+              <div class="Polaris-EmptyState__Content">
+                <%= if get_flash(@conn, :error) do %>
+                  <div style="--top-bar-background:#00848e; --top-bar-background-lighter:#1d9ba4; --top-bar-color:#f9fafb; --p-frame-offset:0px;">
+                    <div id="myFieldIDError" class="Polaris-InlineError">
+                      <div class="Polaris-InlineError__Icon"><span class="Polaris-Icon"><svg viewBox="0 0 20 20" class="Polaris-Icon__Svg" focusable="false" aria-hidden="true">
+                            <path d="M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-1-8h2V6H9v4zm0 4h2v-2H9v2z" fill-rule="evenodd"></path>
+                          </svg></span></div><%= get_flash(@conn, :error) %>
+                    </div>
+                  </div>
+                <% end %>
+                <div style="--top-bar-background:#00848e; --top-bar-background-lighter:#1d9ba4; --top-bar-color:#f9fafb; --p-frame-offset:0px;">
+                  <div class="">
+                    <div class="Polaris-Labelled__LabelWrapper">
+                      <div class="Polaris-Label"><label id="PolarisTextField2Label" for="PolarisTextField2" class="Polaris-Label__Text">Store url</label></div>
+                    </div>
+                    <div class="Polaris-Connected">
+                      <div class="Polaris-Connected__Item Polaris-Connected__Item--primary">
+                        <div class="Polaris-TextField Polaris-TextField--hasValue"><input id="PolarisTextField2" class="Polaris-TextField__Input" aria-labelledby="PolarisTextField2Label" aria-invalid="false" aria-multiline="false" placeholder="acme-shop.myshopify.com" name="shop">
+                          <div class="Polaris-TextField__Backdrop"></div>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div style="--top-bar-background:#00848e; --top-bar-background-lighter:#1d9ba4; --top-bar-color:#f9fafb; --p-frame-offset:0px;">
+              </div>
+            </div>
+            <div class="Polaris-EmptyState__Actions">
+              <div class="Polaris-Stack Polaris-Stack--alignmentCenter">
+                <div class="Polaris-Stack__Item">
+                  <button type="submit" class="Polaris-Button Polaris-Button--primary Polaris-Button--sizeLarge">
+                    <span class="Polaris-Button__Content">
+                      <span class="Polaris-Button__Text">Install</span>
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</form>
