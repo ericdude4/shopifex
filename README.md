@@ -1,4 +1,4 @@
-# :handbag: Shopifex
+# Shopifex
 
 A simple boilerplate package for creating Shopify embedded apps with the Elixir Phoenix framework. [https://hexdocs.pm/shopifex](https://hexdocs.pm/shopifex)
 
@@ -65,9 +65,9 @@ pipeline :shopify_webhook do
   plug Shopifex.Plug.ShopifyWebhook
 end
 ```
-  
+
 Now add this basic example of these plugs in action in `router.ex`
-  
+
 ```elixir
 scope "/auth", MyAppWeb do
   pipe_through [:browser, :shopify_entrypoint]
@@ -87,9 +87,9 @@ scope "/webhook", MyAppWeb do
   post "/", WebhookController, :action
 end
 ```
-  
+
 Create a new controller called `auth_controller.ex` to handle the initial iFrame load and installation
-  
+
 ```elixir
 defmodule MyAppWeb.AuthController do
   use MyAppWeb, :controller
@@ -98,9 +98,9 @@ defmodule MyAppWeb.AuthController do
   # Thats it! Validation, installation are now handled for you :)
 end
 ```
-  
+
 create another controller called `webhook_controller.ex` to handle incoming Shopify webhooks
-  
+
 ```elixir
 defmodule MyAppWeb.WebhookController do
   use MyAppWeb, :controller
