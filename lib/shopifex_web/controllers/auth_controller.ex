@@ -1,4 +1,18 @@
 defmodule ShopifexWeb.AuthController do
+  @moduledoc """
+  You can use this module inside of another controller to handle initial iFrame load and shop installation
+
+  Example:
+
+  ```elixir
+  defmodule MyAppWeb.AuthController do
+    use MyAppWeb, :controller
+    use ShopifexWeb.AuthController
+
+    # Thats it! Validation, installation are now handled for you :)
+  end
+  ```
+  """
   defmacro __using__(_opts) do
     quote do
       require Logger
