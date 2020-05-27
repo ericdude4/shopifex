@@ -46,6 +46,7 @@ defmodule ShopifexWeb.AuthController do
         else
           conn
           |> put_view(ShopifexWeb.AuthView)
+          |> put_layout({ShopifexWeb.LayoutView, "app.html"})
           |> put_flash(:error, "Invalid shop URL")
           |> render("select-store.html")
         end
@@ -54,6 +55,7 @@ defmodule ShopifexWeb.AuthController do
       def auth(conn, _) do
         conn
         |> put_view(ShopifexWeb.AuthView)
+        |> put_layout({ShopifexWeb.LayoutView, "app.html"})
         |> render("select-store.html")
       end
 
