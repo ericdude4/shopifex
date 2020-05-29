@@ -10,7 +10,7 @@ by adding `shopifex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:shopifex, "~> 0.1.0"}
+    {:shopifex, "~> 0.1.1"}
   ]
 end
 ```
@@ -37,7 +37,7 @@ Update your `endpoint.ex` to include the custom body parser. This is necessary f
 plug Plug.Parsers,
   parsers: [:urlencoded, :multipart, :json],
   pass: ["*/*"],
-  body_reader: {Shopifex.CacheBodyReader, :read_body, []},
+  body_reader: {ShopifexWeb.CacheBodyReader, :read_body, []},
   json_decoder: Phoenix.json_library()
 ```
 
