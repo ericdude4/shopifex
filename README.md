@@ -37,7 +37,7 @@ Update your `endpoint.ex` to include the custom body parser. This is necessary f
 plug Plug.Parsers,
   parsers: [:urlencoded, :multipart, :json],
   pass: ["*/*"],
-  body_reader: {MyAppWeb.CacheBodyReader, :read_body, []},
+  body_reader: {Shopifex.CacheBodyReader, :read_body, []},
   json_decoder: Phoenix.json_library()
 ```
 
