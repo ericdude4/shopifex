@@ -44,9 +44,13 @@ plug Plug.Parsers,
 Update your `router.ex` to include the Shopifex plugs
 
 ```elixir
-# Make sure the app can load inside of an iFrame
+# Make your browser pipeline look like this
 pipeline :browser do
-  ...
+  plug :accepts, ["html"]
+  plug :fetch_session
+  plug Shopifex.Plug.FetchFlash
+  plug :protect_from_forgery
+  plug :put_secure_browser_headers
   plug Shopifex.Plug.LoadInIframe
 end
 

@@ -40,7 +40,13 @@ defmodule ShopifexWeb.AuthController do
                 |> put_flash(:shop, shop)
                 |> redirect(to: "/")
               else
-                send_resp(conn, 403, "Invalid HMAC")
+                send_resp(
+                  conn,
+                  403,
+                  "A store was found, but no valid HMAC parameter was provided. Please load this app within the #{
+                    shop_url
+                  } admin panel."
+                )
               end
           end
         else
