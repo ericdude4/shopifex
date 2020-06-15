@@ -10,13 +10,25 @@ defmodule Shopifex.Plug.ShopifyWebhook do
   Ensures that the connection has a valid Shopify webhook HMAC token
   """
   def call(conn, _) do
-    {header_hmac, our_hmac} =
+    {their_hmac, our_hmac} =
       case conn.method do
         "GET" ->
           query_string =
             Regex.named_captures(~r/(?:hmac=[^&]*)&(?'query_string'.*)/, conn.query_string)[
               "query_string"
             ]
+            |> URI.decode()
+            |> (fn query_string ->
+                  if Map.has_key?(conn.query_params, "ids") do
+                    # This absolutely rediculous solution: https://community.shopify.com/c/Shopify-Apps/Hmac-Verification-for-Bulk-Actions/m-p/590611#M18504
+                    query_string = Regex.replace(~r/ids\[\]\=[0-9]*\&/, query_string, "")
+                    ids_section = Enum.join(conn.query_params["ids"], ~s(", "))
+
+                    ~s(ids=["#{ids_section}"]&#{query_string})
+                  else
+                    query_string
+                  end
+                end).()
 
           {
             conn.params["hmac"],
@@ -49,7 +61,7 @@ defmodule Shopifex.Plug.ShopifyWebhook do
           end
       end
 
-    if our_hmac == header_hmac do
+    if our_hmac == their_hmac do
       conn
     else
       conn
