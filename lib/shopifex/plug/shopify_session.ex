@@ -14,13 +14,13 @@ defmodule Shopifex.Plug.ShopifySession do
     shop_schema = Application.fetch_env!(:shopifex, :shop_schema)
 
     case Phoenix.Controller.get_flash(conn, :shop) do
-      %{__struct__: ^shop_schema} = shop ->
+      %{__struct__: ^shop_schema} = _shop ->
         conn
         |> put_shop_in_session()
 
       _ ->
         conn
-        |> Phoenix.Controller.redirect(to: "/auth")
+        |> Phoenix.Controller.redirect(to: "/auth?#{conn.query_string}")
         |> halt()
     end
   end

@@ -2,6 +2,8 @@
 
 A simple boilerplate package for creating Shopify embedded apps with the Elixir Phoenix framework. [https://hexdocs.pm/shopifex](https://hexdocs.pm/shopifex)
 
+For from-scratch setup instructions, read [Create and Elixir Phoenix Shopify App in 5 Minutes](https://medium.com/@ericdude4/create-an-elixir-phoenix-shopify-app-in-5-minutes-ca308bc42216)
+
 ## Installation
 
 The package can be installed
@@ -10,7 +12,7 @@ by adding `shopifex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:shopifex, "~> 0.1.1"}
+    {:shopifex, "~> 0.1.2"}
   ]
 end
 ```
