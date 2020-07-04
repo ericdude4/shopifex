@@ -22,6 +22,11 @@ defmodule Shopifex.Shops do
     |> repo().insert!()
   end
 
+  def update_shop(params, shop) do
+    shop_schema().changeset(shop, params)
+    |> repo().update!()
+  end
+
   def delete_shop(shop) do
     repo().delete!(shop)
   end

@@ -96,6 +96,38 @@ defmodule ShopifexWeb.AuthController do
             IO.inspect(error)
         end
       end
+
+      def update(conn = %{private: %{valid_hmac: true}}, %{"code" => code, "shop" => shop_url}) do
+        url = "https://#{shop_url}/admin/oauth/access_token"
+
+        case(
+          HTTPoison.post(
+            url,
+            Jason.encode!(%{
+              client_id: Application.fetch_env!(:shopifex, :api_key),
+              client_secret: Application.fetch_env!(:shopifex, :secret),
+              code: code
+            }),
+            "Content-Type": "application/json",
+            Accept: "application/json"
+          )
+        ) do
+          {:ok, response} ->
+            shop = Shopifex.Shops.get_shop_by_url(shop_url)
+
+            Jason.decode!(response.body, keys: :atoms)
+            |> Shopifex.Shops.update_shop(shop)
+            |> Shopifex.Shops.configure_webhooks()
+
+            redirect(conn,
+              external:
+                "https://#{shop_url}/admin/apps/#{Application.fetch_env!(:shopifex, :api_key)}"
+            )
+
+          error ->
+            IO.inspect(error)
+        end
+      end
     end
   end
 end
