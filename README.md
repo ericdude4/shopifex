@@ -121,3 +121,21 @@ defmodule MyAppWeb.WebhookController do
   end
 end
 ```
+## Update app permissions
+
+You can also update the app permissions after installation. To do so, first you have to add `your-redirect-url.com/auth/update` to Shopify's whitelist.
+
+Then add the following route to your `/auth` scope:
+
+```
+scope "/auth", MyAppWeb do
+  ...
+  get "/update", AuthController, :update
+end
+```
+
+To add e.g. the `read_customers` scope, you can do so by redirecting them to the following example url:
+
+```
+https://{shop-name}.myshopify.com/admin/oauth/request_grant?client_id=API_KEY&redirect_uri={YOUR_REDIRECT_URL}/auth/update&scope={YOUR_SCOPES},read_customers
+```
