@@ -15,7 +15,7 @@ defmodule ShopifexWeb.WebhookController do
     |> send_resp(200, "success")
   end
 
-  # Manditory Shopify shop data erasure GDPR webhook. Simply delete the shop record
+  # Mandatory Shopify shop data erasure GDPR webhook. Simply delete the shop record
   def handle_topic(conn, shop, "shop/redact") do
     Shopifex.Shops.delete_shop(shop)
 
@@ -23,7 +23,7 @@ defmodule ShopifexWeb.WebhookController do
     |> send_resp(204, "")
   end
 
-  # Manditory Shopify customer data erasure GDPR webhook. Simply delete the shop (customer) record
+  # Mandatory Shopify customer data erasure GDPR webhook. Simply delete the shop (customer) record
   def handle_topic(conn, shop, "customers/redact") do
     Shopifex.Shops.delete_shop(shop)
 
@@ -31,7 +31,7 @@ defmodule ShopifexWeb.WebhookController do
     |> send_resp(204, "")
   end
 
-  # Manditory Shopify customer data request GDPR webhook.
+  # Mandatory Shopify customer data request GDPR webhook.
   def handle_topic(conn, _shop, "customers/data_request") do
     # Send an email of the shop data to the customer.
     conn
