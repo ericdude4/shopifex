@@ -54,8 +54,7 @@ defmodule Shopifex.Shops do
 
     topics = MapSet.new(Application.fetch_env!(:shopifex, :webhook_topics))
 
-    # Make sure all the required topics are conifgured. These are the topics which Synkro relies on
-    # regardless of whether or not syncing is enabled
+    # Make sure all the required topics are conifgured.
     subscribe_to_topics = MapSet.difference(topics, current_webhook_topics)
 
     Enum.each(subscribe_to_topics, fn topic ->
