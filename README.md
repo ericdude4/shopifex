@@ -12,7 +12,7 @@ by adding `shopifex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:shopifex, "~> 0.1.2"}
+    {:shopifex, "~> 0.2.0"}
   ]
 end
 ```
@@ -26,6 +26,7 @@ config :shopifex,
   shop_schema: MyApp.Shop,
   repo: MyApp.Repo,
   redirect_uri: "https://myapp.ngrok.io/auth/install",
+  reinstall_uri: "https://myapp.ngrok.io/auth/update",
   webhook_uri: "https://myapp.ngrok.io/webhook",
   scopes: "read_inventory,write_inventory,read_products,write_products,read_orders",
   api_key: "shopifyapikey123",
@@ -72,13 +73,14 @@ pipeline :shopify_webhook do
 end
 ```
 
-Now add this basic example of these plugs in action in `router.ex`
+Now add this basic example of these plugs in action in `router.ex`. These endpoints need to be added to your Shopify app whitelist
 
 ```elixir
 scope "/auth", MyAppWeb do
   pipe_through [:browser, :shopify_entrypoint]
   get "/", AuthController, :auth
   get "/install", AuthController, :install
+  get "/update", AuthController, :update
 end
 
 scope "/", MyAppWeb do
@@ -160,5 +162,5 @@ end
 To add e.g. the `read_customers` scope, you can do so by redirecting them to the following example url:
 
 ```
-https://{shop-name}.myshopify.com/admin/oauth/request_grant?client_id=API_KEY&redirect_uri={YOUR_REDIRECT_URL}/auth/update&scope={YOUR_SCOPES},read_customers
+https://{shop-name}.myshopify.com/admin/oauth/request_grant?client_id=API_KEY&redirect_uri={YOUR_REINSTALL_URL}/auth/update&scope={YOUR_SCOPES},read_customers
 ```
