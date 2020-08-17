@@ -7,6 +7,7 @@ defmodule Shopifex do
   * `:repo` - The Ecto.Repo for your application
   * `:shop_schema` - Your Ecto.Schema that must have :url, :scopes, and :access_token properties. This is used to install and load stores into the session
   * `:redirect_uri` - The redirect URI used in the Shopify app installation process. Must be whitelisted in your Shopify app configuration
+  * `:reinstall_uri` - The redirect URI used in the Shopify app reinstallation process. Must be whitelisted in your Shopify app configuration
   * `:api_key` - Your Shopify app's API key
   * `:secret` - Your Shopify app's secret
   * `scopes` - Shopify OAuth scopes which your application requires
@@ -23,6 +24,7 @@ defmodule Shopifex do
     api_key: "shopifyapikey123",
     secret: "shopifyapisecret456",
     redirect_uri: "https://myapp.ngrok.io/auth/install",
+    reinstall_uri: "https://myapp.ngrok.io/auth/update",
     scopes: "read_inventory,write_inventory,read_products,write_products,read_orders",
     webhook_uri: "https://myapp.ngrok.io/webhook",
     webhook_topics: ["app/uninstalled"]

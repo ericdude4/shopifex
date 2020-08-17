@@ -18,12 +18,57 @@ defmodule ShopifexWeb.AuthController do
       require Logger
 
       # get authorization token for the shop and save the shop in the DB
+      # The session parameter indicates that this is an entry point request
+      def auth(conn, %{"shop" => shop_url, "session" => _session}) do
+        if Regex.match?(~r/^.*\.myshopify\.com/, shop_url) do
+          conn = put_flash(conn, :shop_url, shop_url)
+          # check if store is in the system already:
+          case Shopifex.Shops.get_shop_by_url(shop_url) do
+            nil ->
+              # If not, prompt user for install
+              install_url =
+                "https://#{shop_url}/admin/oauth/authorize?client_id=#{
+                  Application.fetch_env!(:shopifex, :api_key)
+                }&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{
+                  Application.fetch_env!(:shopifex, :redirect_uri)
+                }"
+
+              conn
+              |> redirect(external: install_url)
+
+            shop ->
+              # If so, place the shop in the session and proceed to the app index
+              # This should be an overridable function instead of hard-coded here
+              if conn.private.valid_hmac do
+                conn
+                |> put_flash(:shop, shop)
+                |> redirect(to: "/")
+              else
+                send_resp(
+                  conn,
+                  403,
+                  "A store was found, but no valid HMAC parameter was provided. Please load this app within the #{
+                    shop_url
+                  } admin panel."
+                )
+              end
+          end
+        else
+          conn
+          |> put_view(ShopifexWeb.AuthView)
+          |> put_layout({ShopifexWeb.LayoutView, "app.html"})
+          |> put_flash(:error, "Invalid shop URL")
+          |> render("select-store.html")
+        end
+      end
+
       def auth(conn, %{"shop" => shop_url}) do
         if Regex.match?(~r/^.*\.myshopify\.com/, shop_url) do
           conn = put_flash(conn, :shop_url, shop_url)
           # check if store is in the system already:
           case Shopifex.Shops.get_shop_by_url(shop_url) do
             nil ->
+              Logger.info("Initiating shop installation for #{shop_url}")
               install_url =
                 "https://#{shop_url}/admin/oauth/authorize?client_id=#{
                   Application.fetch_env!(:shopifex, :api_key)
@@ -36,9 +81,16 @@ defmodule ShopifexWeb.AuthController do
 
             shop ->
               if conn.private.valid_hmac do
+                Logger.info("Initiating shop reinstallation for #{shop_url}")
+                reinstall_url =
+                  "https://#{shop_url}/admin/oauth/request_grant?client_id=#{
+                    Application.fetch_env!(:shopifex, :api_key)
+                  }&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{
+                    Application.fetch_env!(:shopifex, :reinstall_uri)
+                  }"
+
                 conn
-                |> put_flash(:shop, shop)
-                |> redirect(to: "/")
+                |> redirect(external: reinstall_url)
               else
                 send_resp(
                   conn,
