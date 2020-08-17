@@ -25,7 +25,7 @@ defmodule ShopifexWeb.AuthController do
           case Shopifex.Shops.get_shop_by_url(shop_url) do
             nil ->
               install_url =
-                "https://#{shop_url}/admin/oauth/authorize?client_id=#{
+                "https://#{shop_url}/admin/oauth/request_grant?client_id=#{
                   Application.fetch_env!(:shopifex, :api_key)
                 }&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{
                   Application.fetch_env!(:shopifex, :redirect_uri)

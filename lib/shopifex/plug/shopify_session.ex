@@ -1,5 +1,6 @@
 defmodule Shopifex.Plug.ShopifySession do
   import Plug.Conn
+  require Logger
 
   @moduledoc """
   Ensures that a valid store is currently loaded in the session and is accessible in your controllers/templates as `conn.private.shop`
@@ -15,10 +16,14 @@ defmodule Shopifex.Plug.ShopifySession do
 
     case Phoenix.Controller.get_flash(conn, :shop) do
       %{__struct__: ^shop_schema} = _shop ->
+        Logger.info("Found valid shop in session")
+
         conn
         |> put_shop_in_session()
 
       _ ->
+        Logger.info("No valid shop in session")
+
         conn
         |> Phoenix.Controller.redirect(to: "/auth?#{conn.query_string}")
         |> halt()
