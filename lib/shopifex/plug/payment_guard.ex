@@ -20,11 +20,9 @@ defmodule Shopifex.Plug.PaymentGuard do
         redirect_after = URI.encode_www_form("#{conn.request_path}?#{conn.query_string}")
 
         conn
-        |> Plug.Conn.put_status(:payment_required)
-        |> Phoenix.Controller.put_view(ShopifexWeb.AuthView)
-        |> Phoenix.Controller.put_layout({ShopifexWeb.LayoutView, "app.html"})
-        |> Phoenix.Controller.put_flash(:error, "Payment required")
-        |> Phoenix.Controller.render("payment-required.html", redirect_after: redirect_after)
+        |> Phoenix.Controller.redirect(
+          to: "/payment?guard=#{guard_identifier}&redirect_after=#{redirect_after}"
+        )
         |> halt()
 
       payment_for_guard ->
