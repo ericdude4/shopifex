@@ -7,7 +7,7 @@ defmodule Shopifex.Plug.ShopifyWebhook do
   end
 
   @doc """
-  Ensures that the connection has a valid Shopify webhook HMAC token
+  Ensures that the connection has a valid Shopify webhook HMAC token and puts the shop in conn.private
   """
   def call(conn, _) do
     {their_hmac, our_hmac} =
@@ -62,7 +62,8 @@ defmodule Shopifex.Plug.ShopifyWebhook do
       end
 
     if our_hmac == their_hmac do
-      conn
+      shop = Shopifex.Shops.get_shop_by_url(conn.query_params["shop"])
+      Shopifex.Plug.ShopifySession.put_shop_in_session(conn, shop)
     else
       conn
       |> send_resp(401, "invalid hmac signature")
