@@ -14,9 +14,14 @@ defmodule Shopifex.Plug.ShopifyWebhook do
       case conn.method do
         "GET" ->
           query_string =
-            Regex.named_captures(~r/(?:hmac=[^&]*)&(?'query_string'.*)/, conn.query_string)[
-              "query_string"
-            ]
+            Regex.named_captures(~r/(?:hmac=[^&]*)&(?'query_string'.*)/, conn.query_string)
+            |> case do
+              nil ->
+                ""
+
+              regex_captures when is_map(regex_captures) ->
+                Map.get(regex_captures, "query_string", "")
+            end
             |> URI.decode()
             |> (fn query_string ->
                   if Map.has_key?(conn.query_params, "ids") do
