@@ -167,4 +167,5 @@ https://{shop-name}.myshopify.com/admin/oauth/request_grant?client_id=API_KEY&re
 
 ## Add payment guards to routes
 
-`mix phx.gen.schema Shop.Payment shop_payments shop_id:references:shops identifier:string`
+`mix phx.gen.html Shops Plan plans name:string price:string features:array grants:array test:boolean`
+`mix phx.gen.html Shops Grant grants shop:references:shops charge_id:integer grants:array`

@@ -13,7 +13,7 @@ defmodule Shopifex.Plug.PaymentGuard do
   def call(conn, guard_identifier) do
     payment_guard = Application.fetch_env!(:shopifex, :payment_guard)
 
-    case payment_guard.payment_for_guard(conn.private.shop, guard_identifier) do
+    case payment_guard.grant_for_guard(conn.private.shop, guard_identifier) do
       nil ->
         Logger.info("Payment guard blocked request")
 
@@ -21,12 +21,12 @@ defmodule Shopifex.Plug.PaymentGuard do
 
         conn
         |> Phoenix.Controller.redirect(
-          to: "/payment?guard=#{guard_identifier}&redirect_after=#{redirect_after}"
+          to: "/payment/show-plans?guard=#{guard_identifier}&redirect_after=#{redirect_after}"
         )
         |> halt()
 
-      payment_for_guard ->
-        Plug.Conn.put_private(conn, :payment_for_guard, payment_for_guard)
+      grant_for_guard ->
+        Plug.Conn.put_private(conn, :grant_for_guard, grant_for_guard)
     end
   end
 end

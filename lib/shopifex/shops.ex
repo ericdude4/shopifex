@@ -8,7 +8,7 @@ defmodule Shopifex.Shops do
   """
 
   def shop_schema, do: Application.fetch_env!(:shopifex, :shop_schema)
-  def payment_schema, do: Application.fetch_env!(:shopifex, :payment_schema)
+  def grant_schema, do: Application.fetch_env!(:shopifex, :grant_schema)
   def repo, do: Application.fetch_env!(:shopifex, :repo)
 
   def get_shop_by_url(url) do
@@ -32,8 +32,8 @@ defmodule Shopifex.Shops do
     repo().delete!(shop)
   end
 
-  def create_shop_payment(shop, identifier) do
-    payment_schema().changeset(struct!(payment_schema()), %{shop: shop, identifier: identifier})
+  def create_shop_grant(shop, grants) do
+    grant_schema().changeset(struct!(grant_schema()), %{shop: shop, grants: grants})
     |> repo().insert!()
   end
 

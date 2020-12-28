@@ -5,8 +5,8 @@ defmodule Shopifex.Plug.PaymentGuardTest do
   defmodule PaymentGuard do
     use Shopifex.PaymentGuard
 
-    def payment_for_guard(_shop, "grant"), do: %{}
-    def payment_for_guard(_shop, "block"), do: nil
+    def grant_for_guard(_shop, "grant"), do: %{}
+    def grant_for_guard(_shop, "block"), do: nil
   end
 
   setup do
@@ -24,7 +24,7 @@ defmodule Shopifex.Plug.PaymentGuardTest do
     assert conn.status == 302
 
     assert Plug.Conn.get_resp_header(conn, "location") == [
-             "/payment?guard=block&redirect_after=%2Fpremium-route%3Ffoo%3Dbar%26fizz%3Dbuzz"
+             "/payment/show-plans?guard=block&redirect_after=%2Fpremium-route%3Ffoo%3Dbar%26fizz%3Dbuzz"
            ]
   end
 
@@ -36,6 +36,6 @@ defmodule Shopifex.Plug.PaymentGuardTest do
       |> Plug.Conn.put_private(:shop, shop)
       |> Shopifex.Plug.PaymentGuard.call("grant")
 
-    assert conn.private.payment_for_guard == %{}
+    assert conn.private.grant_for_guard == %{}
   end
 end

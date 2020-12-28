@@ -52,7 +52,8 @@ defmodule Shopifex.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:shopify, "~> 0.4"},
-      {:ex_doc, "~> 0.14", only: :dev, runtime: false}
+      {:ex_doc, "~> 0.14", only: :dev, runtime: false},
+      {:react_phoenix, "~> 1.2"}
     ]
   end
 end
