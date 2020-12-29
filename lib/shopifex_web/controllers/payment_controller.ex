@@ -25,7 +25,7 @@ defmodule ShopifexWeb.PaymentController do
       the guarded feature
       """
       def show_plans(conn, %{"guard" => guard}) do
-        plans = Piknpak.Shops.list_plans_granting_guard(guard)
+        plans = Shopifex.Shops.list_plans_granting_guard(guard)
 
         conn
         |> put_view(ShopifexWeb.PaymentView)
@@ -38,7 +38,7 @@ defmodule ShopifexWeb.PaymentController do
       end
 
       def select_plan(conn, %{"plan_id" => plan_id}) do
-        plan = Piknpak.Shops.get_plan!(plan_id)
+        plan = Shopifex.Shops.get_plan!(plan_id)
         shop = conn.private.shop
 
         redirect_uri = Application.get_env(:shopifex, :payment_redirect_uri)
@@ -65,11 +65,11 @@ defmodule ShopifexWeb.PaymentController do
       end
 
       def complete_payment(conn, %{"charge_id" => charge_id, "plan_id" => plan_id}) do
-        plan = Piknpak.Shops.get_plan!(plan_id)
+        plan = Shopifex.Shops.get_plan!(plan_id)
         shop = conn.private.shop
 
         {:ok, _grant} =
-          Piknpak.Shops.create_grant(%{shop: shop, charge_id: charge_id, grants: plan.grants})
+          Shopifex.Shops.create_grant(%{shop: shop, charge_id: charge_id, grants: plan.grants})
 
         api_key = Application.get_env(:shopifex, :api_key)
 
