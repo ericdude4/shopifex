@@ -29,6 +29,7 @@ defmodule ShopifexWeb.PaymentController do
 
         conn
         |> put_view(ShopifexWeb.PaymentView)
+        |> put_layout({ShopifexWeb.LayoutView, "app.html"})
         |> render("show-plans.html",
           plans: plans,
           guard: guard,
@@ -72,11 +73,10 @@ defmodule ShopifexWeb.PaymentController do
 
         api_key = Application.get_env(:shopifex, :api_key)
 
-        message =
-          "Successfully purchased #{plan.name}"
-          |> URI.encode_www_form()
+        # TODO: have this redirect to the page that the user was trying to access before they
+        # got blocked by the paywall. Likely with Cachex or something.
 
-        redirect(conn, external: "https://#{shop.url}/admin/apps/#{api_key}?message=#{message}")
+        redirect(conn, external: "https://#{shop.url}/admin/apps/#{api_key}")
       end
     end
   end
