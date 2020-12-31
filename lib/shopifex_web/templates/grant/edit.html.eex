@@ -1,0 +1,5 @@
+<h1>Edit Grant</h1>
+
+<%= render "form.html", Map.put(assigns, :action, Routes.grant_path(@conn, :update, @grant)) %>
+
+<span><%= link "Back", to: Routes.grant_path(@conn, :index) %></span>
