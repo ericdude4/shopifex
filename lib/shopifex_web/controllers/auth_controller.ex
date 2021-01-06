@@ -40,9 +40,11 @@ defmodule ShopifexWeb.AuthController do
               # If so, place the shop in the session and proceed to the app index
               # This should be an overridable function instead of hard-coded here
               if conn.private.valid_hmac do
+                path_prefix = Application.get_env(:shopifex, :path_prefix, "")
+
                 conn
                 |> put_flash(:shop, shop)
-                |> redirect(to: "/")
+                |> redirect(to: path_prefix <> "/")
               else
                 send_resp(
                   conn,
@@ -69,6 +71,7 @@ defmodule ShopifexWeb.AuthController do
           case Shopifex.Shops.get_shop_by_url(shop_url) do
             nil ->
               Logger.info("Initiating shop installation for #{shop_url}")
+
               install_url =
                 "https://#{shop_url}/admin/oauth/authorize?client_id=#{
                   Application.fetch_env!(:shopifex, :api_key)
@@ -82,6 +85,7 @@ defmodule ShopifexWeb.AuthController do
             shop ->
               if conn.private.valid_hmac do
                 Logger.info("Initiating shop reinstallation for #{shop_url}")
+
                 reinstall_url =
                   "https://#{shop_url}/admin/oauth/request_grant?client_id=#{
                     Application.fetch_env!(:shopifex, :api_key)
