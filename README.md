@@ -25,6 +25,7 @@ config :shopifex,
   app_name: "MyApp",
   shop_schema: MyApp.Shop,
   repo: MyApp.Repo,
+  path_prefix: "/shopfy-app", # optional, default is "" (empty string)
   redirect_uri: "https://myapp.ngrok.io/auth/install",
   reinstall_uri: "https://myapp.ngrok.io/auth/update",
   webhook_uri: "https://myapp.ngrok.io/webhook",
