@@ -1,4 +1,4 @@
-<form method="get" action="/auth">
+<form method="get" action="<%= Application.get_env(:shopifex, :app_url, "/auth") %>">
   <div style="--top-bar-background:#00848e; --top-bar-background-lighter:#1d9ba4; --top-bar-color:#f9fafb; --p-frame-offset:0px;">
     <div class="Polaris-EmptyState Polaris-EmptyState--withinPage">
       <div class="Polaris-EmptyState__Section">

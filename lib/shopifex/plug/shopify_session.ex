@@ -23,9 +23,10 @@ defmodule Shopifex.Plug.ShopifySession do
 
       _ ->
         Logger.info("No valid shop in session")
+        app_uri = Application.get_env(:shopifex, :app_url, "/auth")
 
         conn
-        |> Phoenix.Controller.redirect(to: "/auth?#{conn.query_string}")
+        |> Phoenix.Controller.redirect(to: "#{app_uri}?#{conn.query_string}")
         |> halt()
     end
   end
