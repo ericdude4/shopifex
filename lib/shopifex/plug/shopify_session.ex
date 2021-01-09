@@ -15,11 +15,11 @@ defmodule Shopifex.Plug.ShopifySession do
     shop_schema = Application.fetch_env!(:shopifex, :shop_schema)
 
     case Phoenix.Controller.get_flash(conn, :shop) do
-      %{__struct__: ^shop_schema} = _shop ->
+      %{__struct__: ^shop_schema} = shop ->
         Logger.info("Found valid shop in session")
 
         conn
-        |> put_shop_in_session()
+        |> put_shop_in_session(shop)
 
       _ ->
         Logger.info("No valid shop in session")
@@ -31,9 +31,8 @@ defmodule Shopifex.Plug.ShopifySession do
     end
   end
 
-  defp put_shop_in_session(conn, _opts \\ []) do
-    shop_url = Phoenix.Controller.get_flash(conn, :shop_url)
-    shop = Phoenix.Controller.get_flash(conn, :shop)
+  def put_shop_in_session(conn, shop) do
+    shop_url = shop.url
 
     Plug.Conn.put_private(conn, :shop_url, shop_url)
     |> Phoenix.Controller.put_flash(:shop_url, shop_url)

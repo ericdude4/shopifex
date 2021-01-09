@@ -165,3 +165,8 @@ To add e.g. the `read_customers` scope, you can do so by redirecting them to the
 ```
 https://{shop-name}.myshopify.com/admin/oauth/request_grant?client_id=API_KEY&redirect_uri={YOUR_REINSTALL_URL}/auth/update&scope={YOUR_SCOPES},read_customers
 ```
+
+## Add payment guards to routes
+
+`mix phx.gen.html Shops Plan plans name:string price:string features:array grants:array test:boolean`
+`mix phx.gen.html Shops Grant grants shop:references:shops charge_id:integer grants:array`

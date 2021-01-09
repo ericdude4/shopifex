@@ -1,0 +1,18 @@
+<h1>Show Grant</h1>
+
+<ul>
+
+  <li>
+    <strong>Charge:</strong>
+    <%= @grant.charge_id %>
+  </li>
+
+  <li>
+    <strong>Grants:</strong>
+    <%= @grant.grants %>
+  </li>
+
+</ul>
+
+<span><%= link "Edit", to: Routes.grant_path(@conn, :edit, @grant) %></span>
+<span><%= link "Back", to: Routes.grant_path(@conn, :index) %></span>
