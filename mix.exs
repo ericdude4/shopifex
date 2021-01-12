@@ -4,7 +4,7 @@ defmodule Shopifex.MixProject do
   def project do
     [
       app: :shopifex,
-      version: "0.3.0",
+      version: "0.3.1",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
@@ -20,7 +20,6 @@ defmodule Shopifex.MixProject do
           "ericfroese.ca" => "https://ericfroese.ca"
         }
       ],
-
       # Docs
       name: "Shopifex",
       source_url: "https://github.com/ericdude4/shopifex",

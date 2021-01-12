@@ -19,6 +19,8 @@ defmodule ShopifexWeb.Routes do
       end
 
       pipeline :shopify_webhook do
+        plug(:fetch_session)
+        plug(Shopifex.Plug.FetchFlash)
         plug(Shopifex.Plug.ShopifyWebhook)
       end
 

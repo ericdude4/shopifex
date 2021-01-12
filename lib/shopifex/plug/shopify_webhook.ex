@@ -68,10 +68,12 @@ defmodule Shopifex.Plug.ShopifyWebhook do
       end
 
     if our_hmac == their_hmac do
-      shop = Shopifex.Shops.get_shop_by_url(conn.query_params["shop"])
+      shop_url = conn.params["myshopify_domain"] || conn.query_params["shop"]
+      shop = Shopifex.Shops.get_shop_by_url(shop_url)
       Shopifex.Plug.ShopifySession.put_shop_in_session(conn, shop)
     else
       Logger.info("HMAC doesn't match " <> our_hmac)
+
       conn
       |> send_resp(401, "invalid hmac signature")
       |> halt()
