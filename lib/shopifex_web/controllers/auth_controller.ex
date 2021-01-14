@@ -21,12 +21,12 @@ defmodule ShopifexWeb.AuthController do
 
   ## Example
 
-    def after_install(conn, shop) do
-      # send yourself an e-mail about shop installation
+      def after_install(conn, shop) do
+        # send yourself an e-mail about shop installation
 
-      # follow default behaviour.
-      super(conn, shop)
-    end
+        # follow default behaviour.
+        super(conn, shop)
+      end
   """
   @callback after_install(Plug.Conn.t(), Ecto.Schema.t()) :: Plug.Conn.t()
   @optional_callbacks after_install: 2
