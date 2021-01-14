@@ -13,8 +13,28 @@ defmodule ShopifexWeb.AuthController do
   end
   ```
   """
+
+  @doc """
+  An optional callback called after the installation is completed, the shop is
+  persisted in the database and webhooks are registered. By default, this function
+  redirects the user to the app within their Shopify admin panel.
+
+  ## Example
+
+    def after_install(conn, shop) do
+      # send yourself an e-mail about shop installation
+
+      # follow default behaviour.
+      super(conn, shop)
+    end
+  """
+  @callback after_install(Plug.Conn.t(), Ecto.Schema.t()) :: Plug.Conn.t()
+  @optional_callbacks after_install: 2
+
   defmacro __using__(_opts) do
     quote do
+      @behaviour ShopifexWeb.AuthController
+
       require Logger
 
       # get authorization token for the shop and save the shop in the DB
@@ -121,6 +141,14 @@ defmodule ShopifexWeb.AuthController do
         |> render("select-store.html")
       end
 
+      @impl ShopifexWeb.AuthController
+      def after_install(conn, shop) do
+        redirect(conn,
+          external:
+            "https://#{shop.url}/admin/apps/#{Application.fetch_env!(:shopifex, :api_key)}"
+        )
+      end
+
       def install(conn = %{private: %{valid_hmac: true}}, %{"code" => code, "shop" => shop_url}) do
         url = "https://#{shop_url}/admin/oauth/access_token"
 
@@ -141,15 +169,13 @@ defmodule ShopifexWeb.AuthController do
               Jason.decode!(response.body, keys: :atoms)
               |> Map.put(:url, shop_url)
               |> Shopifex.Shops.create_shop()
-              |> Shopifex.Shops.configure_webhooks()
 
-            redirect(conn,
-              external:
-                "https://#{shop_url}/admin/apps/#{Application.fetch_env!(:shopifex, :api_key)}"
-            )
+            Shopifex.Shops.configure_webhooks(shop)
+
+            after_install(conn, shop)
 
           error ->
-            IO.inspect(error)
+            raise(Shopifex.InstallError, message: "Installation failed for shop #{shop_url}")
         end
       end
 
@@ -181,9 +207,11 @@ defmodule ShopifexWeb.AuthController do
             )
 
           error ->
-            IO.inspect(error)
+            raise(Shopifex.UpdateError, message: "Update failed for shop #{shop_url}")
         end
       end
+
+      defoverridable after_install: 2
     end
   end
 end
