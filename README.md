@@ -54,7 +54,7 @@ plug Plug.Parsers,
   json_decoder: Phoenix.json_library()
 ```
 
-Add this line at the top of `router.ex` to include the Shopifex pipelines
+Add this line near the top of `router.ex` to include the Shopifex pipelines
 
 ```elixir
 ShopifexWeb.Routes.pipelines()
