@@ -178,6 +178,12 @@ config :my_app,
   grant_schema: MyApp.Shops.Grant,
   plan_schema: MyApp.Shops.Plan
 ```
+Create the payment guard module:
+```elixir
+defmodule MyAppWeb.Shops.PaymentGuard do
+  use Shopifex.PaymentGuard
+end
+```
 Create a new payment controller:
 ```elixir
 defmodule MyAppWeb.PaymentController do
