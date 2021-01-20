@@ -195,11 +195,13 @@ defmodule ShopifexWeb.AuthController do
           )
         ) do
           {:ok, response} ->
-            shop = Shopifex.Shops.get_shop_by_url(shop_url)
+            params = Jason.decode!(response.body, keys: :atoms)
 
-            Jason.decode!(response.body, keys: :atoms)
-            |> Shopifex.Shops.update_shop(shop)
-            |> Shopifex.Shops.configure_webhooks()
+            shop =
+              shop_url
+              |> Shopifex.Shops.get_shop_by_url()
+              |> Shopifex.Shops.update_shop(params)
+              |> Shopifex.Shops.configure_webhooks()
 
             redirect(conn,
               external:
