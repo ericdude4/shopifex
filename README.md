@@ -176,7 +176,8 @@ Add the config options:
 config :my_app,
   payment_guard: MyApp.Shops.PaymentGuard,
   grant_schema: MyApp.Shops.Grant,
-  plan_schema: MyApp.Shops.Plan
+  plan_schema: MyApp.Shops.Plan,
+  payment_redirect_uri: "https://myapp.ngrok.io/payment/complete"
 ```
 Create the payment guard module:
 ```elixir
