@@ -17,7 +17,7 @@ export default class ShowPlans extends React.Component {
             shopOrigin: props.shopUrl,
         })
         const redirect = Redirect.create(app);
-        this.state = {redirect: redirect}
+        this.state = { redirect: redirect }
     }
 
     selectPlan(plan) {
@@ -34,7 +34,7 @@ export default class ShowPlans extends React.Component {
                 }
             )
             .then(resp => {
-                this.state.redirect.dispatch(Redirect.Action.REMOTE, resp.data.recurring_application_charge.confirmation_url)
+                this.state.redirect.dispatch(Redirect.Action.REMOTE, resp.data.confirmation_url)
             })
     }
 
@@ -61,7 +61,7 @@ export default class ShowPlans extends React.Component {
                         }}
                     >
                         <Card.Section>
-                            <h1 style={{ fontSize: "30px", marginBottom: "25px" }}>${plan.price}/month</h1>
+                            <h1 style={{ fontSize: "30px", marginBottom: "25px" }}>${plan.price}{plan.type === "recurring_application_charge" ? "/month" : " one time payment"}</h1>
                             <List>
                                 {features}
                             </List>
@@ -72,7 +72,7 @@ export default class ShowPlans extends React.Component {
         }
         return <Page
             fullWidth
-            title="Payment required to access this feature"
+            title="Payment options"
         >
             <Layout>
                 {cards}

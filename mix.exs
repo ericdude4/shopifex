@@ -4,7 +4,7 @@ defmodule Shopifex.MixProject do
   def project do
     [
       app: :shopifex,
-      version: "0.3.4",
+      version: "0.3.5",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
@@ -35,6 +35,7 @@ defmodule Shopifex.MixProject do
   # Run "mix help compile.app" to learn about applications.
   def application do
     [
+      mod: {Shopifex.Application, []},
       extra_applications: [:logger]
     ]
   end

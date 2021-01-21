@@ -26,6 +26,7 @@ defmodule Shopifex.Plug.PaymentGuard do
         |> halt()
 
       grant_for_guard ->
+        grant_for_guard = payment_guard.use_grant(conn.private.shop, grant_for_guard)
         Plug.Conn.put_private(conn, :grant_for_guard, grant_for_guard)
     end
   end

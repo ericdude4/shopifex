@@ -1,1 +1,1 @@
-<%= ReactPhoenix.ClientSide.react_component("Components.WrappedShowPlans", %{plans: @plans, guard: @guard, shop_url: @shop_url, shopify_api_key: Application.get_env(:shopifex, :api_key)}) %>
+<%= ReactPhoenix.ClientSide.react_component("Components.WrappedShowPlans", %{plans: @plans, guard: @guard, shop_url: @shop_url, redirect_after: @redirect_after, shopify_api_key: Application.get_env(:shopifex, :api_key)}) %>

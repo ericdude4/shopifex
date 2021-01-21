@@ -167,9 +167,9 @@ This system allows you to use the `Shopifex.Plug.PaymentGuard` plug. If the merc
 
 Generate the schemas
 
-`mix phx.gen.html Shops Plan plans name:string price:string features:array grants:array test:boolean`
+`mix phx.gen.html Shops Plan plans name:string price:string features:array grants:array test:boolean usages:integer type:string`
 
-`mix phx.gen.html Shops Grant grants shop:references:shops charge_id:integer grants:array`
+`mix phx.gen.html Shops Grant grants shop:references:shops charge_id:integer grants:array remaining_usages:integer`
 
 Add the config options:
 ```elixir
