@@ -16,8 +16,27 @@ defmodule ShopifexWeb.PaymentController do
   end
   ```
   """
+
+  @doc """
+  An optional callback called after a payment is completed. By default, this function
+  redirects the user to the app index within their Shopify admin panel.
+
+  ## Example
+
+      def after_payment(conn, shop, plan, grant) do
+        # send yourself an e-mail about payment
+
+        # follow default behaviour.
+        super(conn, shop, plan, grant)
+      end
+  """
+  @callback after_payment(Plug.Conn.t(), Ecto.Schema.t(), Ecto.Schema.t(), Ecto.Schema.t()) :: Plug.Conn.t()
+  @optional_callbacks after_payment: 4
+
   defmacro __using__(_opts) do
     quote do
+      @behaviour ShopifexWeb.PaymentController
+
       require Logger
 
       @doc """
@@ -68,9 +87,14 @@ defmodule ShopifexWeb.PaymentController do
         plan = Shopifex.Shops.get_plan!(plan_id)
         shop = conn.private.shop
 
-        {:ok, _grant} =
+        {:ok, grant} =
           Shopifex.Shops.create_grant(%{shop: shop, charge_id: charge_id, grants: plan.grants})
 
+        after_payment(conn, shop, plan, grant)
+      end
+
+      @impl ShopifexWeb.PaymentController
+      def after_payment(conn, shop, plan, grant) do
         api_key = Application.get_env(:shopifex, :api_key)
 
         # TODO: have this redirect to the page that the user was trying to access before they
@@ -78,6 +102,8 @@ defmodule ShopifexWeb.PaymentController do
 
         redirect(conn, external: "https://#{shop.url}/admin/apps/#{api_key}")
       end
+
+      defoverridable after_payment: 4
     end
   end
 end
