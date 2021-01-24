@@ -163,7 +163,7 @@ https://{shop-name}.myshopify.com/admin/oauth/request_grant?client_id=API_KEY&re
 ```
 
 ## Beta feature: Add payment guards to routes
-This system allows you to use the `Shopifex.Plug.PaymentGuard` plug. If the merchant does not have an active grant associated with the named guard, it will redirect them to a plan selection page, allow them to pay, and handle the payment callback all automatically.
+This system allows you to use the `Shopifex.Plug.PaymentGuard` plug. If the merchant does not have an active grant associated with the named guard, it will redirect them to a plan selection page, allow them to pay, and handle the payment callback all automatically. I am working on the admin panel where you can register Plan objects which grant `premium_plan` (for example) - but for now these need to be entered manually into the database.
 
 Generate the schemas
 
