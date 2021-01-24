@@ -179,6 +179,15 @@ config :my_app,
   plan_schema: MyApp.Shops.Plan,
   payment_redirect_uri: "https://myapp.ngrok.io/payment/complete"
 ```
+Serve the Shopifex assets for the plans selection page. Add the following to `endpoint.ex`:
+```elixir
+# Serve at "/shopifex-assets" the static files from shopifex.
+plug Plug.Static,
+  at: "/shopifex-assets",
+  from: :shopifex,
+  gzip: false,
+  only: ~w(css fonts images js favicon.ico robots.txt)
+```
 Create the payment guard module:
 ```elixir
 defmodule MyAppWeb.Shops.PaymentGuard do
