@@ -2,7 +2,7 @@
 
 A simple boilerplate package for creating Shopify embedded apps with the Elixir Phoenix framework. [https://hexdocs.pm/shopifex](https://hexdocs.pm/shopifex)
 
-For from-scratch setup instructions (slightly out of date), read [Create and Elixir Phoenix Shopify App in 5 Minutes](https://medium.com/@ericdude4/create-an-elixir-phoenix-shopify-app-in-5-minutes-ca308bc42216)
+For from-scratch setup instructions (slightly out of date), read [Create an Elixir Phoenix Shopify App in 5 Minutes](https://medium.com/@ericdude4/create-an-elixir-phoenix-shopify-app-in-5-minutes-ca308bc42216)
 
 ## Installation
 
@@ -167,9 +167,9 @@ This system allows you to use the `Shopifex.Plug.PaymentGuard` plug. If the merc
 
 Generate the schemas
 
-`mix phx.gen.html Shops Plan plans name:string price:string features:array grants:array test:boolean usages:integer type:string`
+`mix phx.gen.schema Shops Plan plans name:string price:string features:array grants:array test:boolean usages:integer type:string`
 
-`mix phx.gen.html Shops Grant grants shop:references:shops charge_id:integer grants:array remaining_usages:integer`
+`mix phx.gen.schema Shops Grant grants shop:references:shops charge_id:integer grants:array remaining_usages:integer`
 
 Add the config options:
 ```elixir
