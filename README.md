@@ -2,7 +2,7 @@
 
 A simple boilerplate package for creating Shopify embedded apps with the Elixir Phoenix framework. [https://hexdocs.pm/shopifex](https://hexdocs.pm/shopifex)
 
-For from-scratch setup instructions (slightly out of date), read [Create and Elixir Phoenix Shopify App in 5 Minutes](https://medium.com/@ericdude4/create-an-elixir-phoenix-shopify-app-in-5-minutes-ca308bc42216)
+For from-scratch setup instructions (slightly out of date), read [Create an Elixir Phoenix Shopify App in 5 Minutes](https://medium.com/@ericdude4/create-an-elixir-phoenix-shopify-app-in-5-minutes-ca308bc42216)
 
 ## Installation
 
@@ -163,13 +163,13 @@ https://{shop-name}.myshopify.com/admin/oauth/request_grant?client_id=API_KEY&re
 ```
 
 ## Beta feature: Add payment guards to routes
-This system allows you to use the `Shopifex.Plug.PaymentGuard` plug. If the merchant does not have an active grant associated with the named guard, it will redirect them to a plan selection page, allow them to pay, and handle the payment callback all automatically.
+This system allows you to use the `Shopifex.Plug.PaymentGuard` plug. If the merchant does not have an active grant associated with the named guard, it will redirect them to a plan selection page, allow them to pay, and handle the payment callback all automatically. I am working on the admin panel where you can register Plan objects which grant `premium_plan` (for example) - but for now these need to be entered manually into the database.
 
 Generate the schemas
 
-`mix phx.gen.html Shops Plan plans name:string price:string features:array grants:array test:boolean usages:integer type:string`
+`mix phx.gen.schema Shops Plan plans name:string price:string features:array:string grants:array:string test:boolean usages:integer type:string`
 
-`mix phx.gen.html Shops Grant grants shop:references:shops charge_id:integer grants:array remaining_usages:integer total_usages:integer`
+`mix phx.gen.schema Shops Grant grants shop:references:shops charge_id:integer grants:array:string remaining_usages:integer total_usages:integer`
 
 Add the config options:
 ```elixir
@@ -178,6 +178,15 @@ config :my_app,
   grant_schema: MyApp.Shops.Grant,
   plan_schema: MyApp.Shops.Plan,
   payment_redirect_uri: "https://myapp.ngrok.io/payment/complete"
+```
+Serve the Shopifex assets for the plans selection page. Add the following to `endpoint.ex`:
+```elixir
+# Serve at "/shopifex-assets" the static files from shopifex.
+plug Plug.Static,
+  at: "/shopifex-assets",
+  from: :shopifex,
+  gzip: false,
+  only: ~w(css fonts images js favicon.ico robots.txt)
 ```
 Create the payment guard module:
 ```elixir
