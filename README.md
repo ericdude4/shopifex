@@ -17,6 +17,11 @@ def deps do
 end
 ```
 ## Quickstart
+Create the shop schema where the installation data will be stored:
+```
+mix phx.gen.schema Shop shops url:string access_token:string scope:string
+mix ecto.migrate
+```
 
 Add the `:shopifex` config settings to your `config.ex`. More config details [here](https://hexdocs.pm/shopifex)
 
@@ -167,9 +172,9 @@ This system allows you to use the `Shopifex.Plug.PaymentGuard` plug. If the merc
 
 Generate the schemas
 
-`mix phx.gen.schema Shops Plan plans name:string price:string features:array:string grants:array:string test:boolean usages:integer type:string`
+`mix phx.gen.schema Shops.Plan plans name:string price:string features:array:string grants:array:string test:boolean usages:integer type:string`
 
-`mix phx.gen.schema Shops Grant grants shop:references:shops charge_id:integer grants:array:string remaining_usages:integer total_usages:integer`
+`mix phx.gen.schema Shops.Grant grants shop:references:shops charge_id:integer grants:array:string remaining_usages:integer total_usages:integer`
 
 Add the config options:
 ```elixir
@@ -190,7 +195,7 @@ plug Plug.Static,
 ```
 Create the payment guard module:
 ```elixir
-defmodule MyAppWeb.Shops.PaymentGuard do
+defmodule MyApp.Shops.PaymentGuard do
   use Shopifex.PaymentGuard
 end
 ```
