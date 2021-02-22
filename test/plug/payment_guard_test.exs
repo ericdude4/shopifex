@@ -1,25 +1,17 @@
 defmodule Shopifex.Plug.PaymentGuardTest do
-  use ExUnit.Case, async: true
-  use Plug.Test
-
-  defmodule PaymentGuard do
-    use Shopifex.PaymentGuard
-
-    def grant_for_guard(_shop, "grant"), do: %{}
-    def grant_for_guard(_shop, "block"), do: nil
-  end
+  use ShopifexWeb.ConnCase
 
   setup do
-    shop = %{url: "shopifex.myshopify.com", scope: "orders", access_token: "asdf1234"}
-
-    {:ok, shop: shop}
+    conn = build_conn(:get, "/premium-route?foo=bar&fizz=buzz")
+    {:ok, conn: conn}
   end
 
-  test "payment guard blocks pay-walled function and redirects to payment route", %{shop: shop} do
-    conn =
-      conn(:get, "/premium-route?foo=bar&fizz=buzz", %{})
-      |> Plug.Conn.put_private(:shop, shop)
-      |> Shopifex.Plug.PaymentGuard.call("block")
+  setup [:shop_in_session]
+
+  test "payment guard blocks pay-walled function and redirects to payment route", %{
+    conn: conn
+  } do
+    conn = Shopifex.Plug.PaymentGuard.call(conn, "block")
 
     assert conn.status == 302
 
@@ -29,13 +21,13 @@ defmodule Shopifex.Plug.PaymentGuardTest do
   end
 
   test "payment guard grants access pay-walled function and places guard payment in session", %{
+    conn: conn,
     shop: shop
   } do
-    conn =
-      conn(:get, "/premium-route?foo=bar&fizz=buzz", %{})
-      |> Plug.Conn.put_private(:shop, shop)
-      |> Shopifex.Plug.PaymentGuard.call("grant")
+    Shopifex.Shops.create_grant(%{shop: shop, grants: ["premium_access"]})
 
-    assert conn.private.grant_for_guard == %{}
+    conn = Shopifex.Plug.PaymentGuard.call(conn, "premium_access")
+
+    assert %ShopifexDummy.Shops.Grant{grants: ["premium_access"]} = conn.private.grant_for_guard
   end
 end

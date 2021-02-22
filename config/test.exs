@@ -2,7 +2,7 @@ use Mix.Config
 
 config :shopifex,
   shop_schema: %{},
-  payment_guard: Shopifex.Plug.PaymentGuardTest.PaymentGuard
+  payment_guard: Shopifex.Plug.PaymentGuardTest.PaymentGuard,
+  env: Mix.env()
 
-config :shopifex,
-  ecto_repos: [Shopifex.Repo]
+import_config "../test/support/shopifex_dummy/config/config.exs"

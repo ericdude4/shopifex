@@ -9,7 +9,8 @@ defmodule Shopifex.MixProject do
       start_permanent: Mix.env() == :prod,
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
       deps: deps(),
-
+      aliases: aliases(),
+      elixirc_paths: elixirc_paths(Mix.env()),
       # Hex
       description: "Phoenix boilerplate for Shopify Embedded App SDK",
       package: [
@@ -31,6 +32,11 @@ defmodule Shopifex.MixProject do
       ]
     ]
   end
+
+  # A hack to bypass default env (https://stackoverflow.com/questions/51788263/module-conncase-is-not-loaded-and-could-not-be-found)
+  defp elixirc_paths(:dev), do: ["lib", "test/support"]
+  defp elixirc_paths(:test), do: ["lib", "test/support"]
+  defp elixirc_paths(_), do: ["lib"]
 
   # Run "mix help compile.app" to learn about applications.
   def application do
@@ -54,6 +60,16 @@ defmodule Shopifex.MixProject do
       {:shopify, "~> 0.4"},
       {:ex_doc, "~> 0.14", only: :dev, runtime: false},
       {:react_phoenix, "~> 1.2"}
+    ]
+  end
+
+  defp aliases do
+    [
+      test: [
+        "ecto.create --quiet --repo ShopifexDummy.Repo",
+        "ecto.migrate --quiet --repo ShopifexDummy.Repo --migrations-path test/support/shopifex_dummy/priv/repo/migrations",
+        "test"
+      ]
     ]
   end
 end

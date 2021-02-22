@@ -1,0 +1,11 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <title>ShopifexDummy</title>
+  </head>
+  <body>
+    <main>
+      <%= @inner_content %>
+    </main>
+  </body>
+</html>

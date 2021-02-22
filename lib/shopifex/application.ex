@@ -6,9 +6,19 @@ defmodule Shopifex.Application do
   use Application
 
   def start(_type, _args) do
-    children = [
-      Shopifex.RedirectAfterAgent
-    ]
+    children =
+      if Application.get_env(:shopifex, :env) == :test do
+        [
+          ShopifexDummy.Repo,
+          {Phoenix.PubSub, name: ShopifexDummy.PubSub},
+          ShopifexDummyWeb.Endpoint
+        ]
+      else
+        []
+      end
+      |> Kernel.++([
+        Shopifex.RedirectAfterAgent
+      ])
 
     # See https://hexdocs.pm/elixir/Supervisor.html
     # for other strategies and supported options
