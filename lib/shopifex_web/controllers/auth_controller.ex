@@ -79,7 +79,7 @@ defmodule ShopifexWeb.AuthController do
           conn
           |> put_view(ShopifexWeb.AuthView)
           |> put_layout({ShopifexWeb.LayoutView, "app.html"})
-          |> put_flash(:error, "Invalid shop URL")
+          |> put_flash(:error, "Invalid shop URL. Must be in the format *.myshopify.com")
           |> render("select-store.html")
         end
       end

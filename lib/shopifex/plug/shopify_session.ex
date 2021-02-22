@@ -14,7 +14,7 @@ defmodule Shopifex.Plug.ShopifySession do
   def call(conn, _) do
     shop_schema = Application.fetch_env!(:shopifex, :shop_schema)
 
-    case Phoenix.Controller.get_flash(conn, :shop) do
+    case get_shop_from_conn(conn) do
       %{__struct__: ^shop_schema} = shop ->
         Logger.info("Found valid shop in session")
 
@@ -29,6 +29,10 @@ defmodule Shopifex.Plug.ShopifySession do
         |> Phoenix.Controller.redirect(to: "#{path_prefix}/auth?#{conn.query_string}")
         |> halt()
     end
+  end
+
+  defp get_shop_from_conn(conn) do
+    Phoenix.Controller.get_flash(conn, :shop) || Map.get(conn.private, :shop)
   end
 
   def put_shop_in_session(conn, shop) do
