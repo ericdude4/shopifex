@@ -210,26 +210,9 @@ Add payment routes to `router.ex`:
 ```elixir
 ShopifexWeb.Routes.payment_routes(MyAppWeb)
 ```
-To manage plans, add admin routes behind a secure scope. Here you can manage available payment options (layout ugly, work in progress).
-```elixir
-# I used Pow, but you can use whatever you like
-pipeline :protected do
-  plug Pow.Plug.RequireAuthenticated,
-    error_handler: Pow.Phoenix.PlugErrorHandler
-end
 
-scope "/admin" do
-  pipe_through [:protected]
-  MyAppWeb.Routes.shopifex_admin()
-end
+To manage plans, I recommend using [kaffy admin package](https://github.com/aesmail/kaffy)
 
-# This is Pow-specific. It registers the routes for logging in
-scope "/" do
-  pipe_through :shopify_browser
-
-  pow_routes()
-end
-```
 Now you can protect routes or controller actions with the `Shopifex.Plug.PaymentGuard` plug. Here is an example of it in action on an admin link
 ```elixir
 defmodule MyAppWeb.AdminLinkController do

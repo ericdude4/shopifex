@@ -33,16 +33,6 @@ defmodule ShopifexWeb.Routes do
     end
   end
 
-  defmacro shopifex_admin() do
-    quote do
-      scope "/", ShopifexWeb do
-        pipe_through([:shopify_browser])
-        resources("/plans", PlanController)
-        resources("/grants", GrantController)
-      end
-    end
-  end
-
   defmacro auth_routes(app_web_module \\ ShopifexWeb) do
     quote do
       scope "/auth", unquote(app_web_module) do
