@@ -1,5 +1,0 @@
-<h1>Edit Plan</h1>
-
-<%= render "form.html", Map.put(assigns, :action, Routes.plan_path(@conn, :update, @plan)) %>
-
-<span><%= link "Back", to: Routes.plan_path(@conn, :index) %></span>
