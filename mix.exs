@@ -34,7 +34,6 @@ defmodule Shopifex.MixProject do
   end
 
   # A hack to bypass default env (https://stackoverflow.com/questions/51788263/module-conncase-is-not-loaded-and-could-not-be-found)
-  defp elixirc_paths(:dev), do: ["lib", "test/support"]
   defp elixirc_paths(:test), do: ["lib", "test/support"]
   defp elixirc_paths(_), do: ["lib"]
 
