@@ -12,7 +12,7 @@ by adding `shopifex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:shopifex, "~> 0.3"}
+    {:shopifex, "~> 0.4"}
   ]
 end
 ```
