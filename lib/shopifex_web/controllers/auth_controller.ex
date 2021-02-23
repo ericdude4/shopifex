@@ -13,6 +13,7 @@ defmodule ShopifexWeb.AuthController do
   end
   ```
   """
+  @type shop :: %{access_token: String.t(), scope: String.t(), url: String.t()}
 
   @doc """
   An optional callback called after the installation is completed, the shop is
@@ -21,6 +22,7 @@ defmodule ShopifexWeb.AuthController do
 
   ## Example
 
+      @impl true
       def after_install(conn, shop) do
         # send yourself an e-mail about shop installation
 
@@ -28,8 +30,28 @@ defmodule ShopifexWeb.AuthController do
         super(conn, shop)
       end
   """
-  @callback after_install(Plug.Conn.t(), Ecto.Schema.t()) :: Plug.Conn.t()
-  @optional_callbacks after_install: 2
+  @callback after_install(Plug.Conn.t(), shop()) :: Plug.Conn.t()
+
+  @doc """
+  An optional callback which is called after the shop data has been retrieved from
+  Shopify API. This function should persist the shop data and return a shop record.
+
+  ## Example
+
+      @impl true
+      def insert_shop(conn, shop) do
+        # make sure there is only one store in the database because we don't have
+        # a unique index on the url column for some reason.
+
+        case Shopifex.Shops.get_shop_by_url(shop_url) do
+          nil -> super(shop)
+          shop -> shop
+        end
+      end
+  """
+  @callback insert_shop(shop()) :: shop()
+
+  @optional_callbacks after_install: 2, insert_shop: 1
 
   defmacro __using__(_opts) do
     quote do
@@ -149,6 +171,11 @@ defmodule ShopifexWeb.AuthController do
         )
       end
 
+      @impl ShopifexWeb.AuthController
+      def insert_shop(shop) do
+        Shopifex.Shops.create_shop(shop)
+      end
+
       def install(conn = %{private: %{valid_hmac: true}}, %{"code" => code, "shop" => shop_url}) do
         url = "https://#{shop_url}/admin/oauth/access_token"
 
@@ -168,7 +195,7 @@ defmodule ShopifexWeb.AuthController do
             shop =
               Jason.decode!(response.body, keys: :atoms)
               |> Map.put(:url, shop_url)
-              |> Shopifex.Shops.create_shop()
+              |> insert_shop()
 
             Shopifex.Shops.configure_webhooks(shop)
 
@@ -213,7 +240,7 @@ defmodule ShopifexWeb.AuthController do
         end
       end
 
-      defoverridable after_install: 2
+      defoverridable after_install: 2, insert_shop: 1
     end
   end
 end
