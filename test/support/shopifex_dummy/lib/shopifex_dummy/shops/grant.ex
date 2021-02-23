@@ -4,12 +4,12 @@ defmodule ShopifexDummy.Shops.Grant do
   alias ShopifexDummy.Shop
 
   schema "grants" do
-    field :charge_id, :integer
-    field :grants, {:array, :string}
-    field :remaining_usages, :integer
-    field :total_usages, :integer, default: 0
+    field(:charge_id, :integer)
+    field(:grants, {:array, :string})
+    field(:remaining_usages, :integer)
+    field(:total_usages, :integer, default: 0)
 
-    belongs_to :shop, Shop
+    belongs_to(:shop, Shop)
 
     timestamps()
   end

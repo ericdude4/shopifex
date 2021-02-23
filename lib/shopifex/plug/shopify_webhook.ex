@@ -70,7 +70,8 @@ defmodule Shopifex.Plug.ShopifyWebhook do
     if our_hmac == their_hmac do
       shop =
         case Plug.Conn.get_req_header(conn, "x-shopify-shop-domain") do
-          [shop_url] -> shop_url
+          [shop_url] ->
+            shop_url
 
           _ ->
             conn.params["myshopify_domain"] || conn.query_params["shop"]

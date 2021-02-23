@@ -7,7 +7,7 @@ defmodule ShopifexDummyWeb.Router do
   ShopifexWeb.Routes.auth_routes(ShopifexDummyWeb)
 
   scope "/", ShopifexDummyWeb do
-    pipe_through [:shopify_browser, :shopify_session]
+    pipe_through([:shopify_browser, :shopify_session])
 
     get("/", PageController, :index)
   end

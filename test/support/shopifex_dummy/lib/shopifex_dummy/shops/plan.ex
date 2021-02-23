@@ -5,13 +5,13 @@ defmodule ShopifexDummy.Shops.Plan do
   @derive {Jason.Encoder, only: [:id, :features, :grants, :name, :price, :type, :usages]}
 
   schema "plans" do
-    field :features, {:array, :string}
-    field :grants, {:array, :string}
-    field :name, :string
-    field :price, :string
-    field :test, :boolean, default: false
-    field :type, :string, default: "recurring_application_charge"
-    field :usages, :integer
+    field(:features, {:array, :string})
+    field(:grants, {:array, :string})
+    field(:name, :string)
+    field(:price, :string)
+    field(:test, :boolean, default: false)
+    field(:type, :string, default: "recurring_application_charge")
+    field(:usages, :integer)
 
     timestamps()
   end

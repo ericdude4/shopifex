@@ -3,9 +3,9 @@ defmodule ShopifexDummy.Shop do
   import Ecto.Changeset
 
   schema "shops" do
-    field :url, :string
-    field :scope, :string
-    field :access_token, :string
+    field(:url, :string)
+    field(:scope, :string)
+    field(:access_token, :string)
 
     timestamps()
   end
