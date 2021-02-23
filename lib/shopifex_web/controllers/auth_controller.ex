@@ -39,7 +39,7 @@ defmodule ShopifexWeb.AuthController do
   ## Example
 
       @impl true
-      def insert_shop(conn, shop) do
+      def insert_shop(conn) do
         # make sure there is only one store in the database because we don't have
         # a unique index on the url column for some reason.
 
