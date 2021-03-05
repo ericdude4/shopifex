@@ -1,0 +1,10 @@
+<%=
+    ReactPhoenix.ClientSide.react_component(
+        "Components.WrappedLoadSession",
+        %{
+            shop_url: @shop_url,
+            redirect_after: @redirect_after,
+            shopify_api_key: Application.get_env(:shopifex, :api_key)
+        }
+    )
+%>

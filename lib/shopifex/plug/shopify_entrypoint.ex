@@ -1,5 +1,6 @@
 defmodule Shopifex.Plug.ShopifyEntrypoint do
   import Plug.Conn
+  import Phoenix.Controller
 
   def init(options) do
     # initialize options
@@ -11,7 +12,40 @@ defmodule Shopifex.Plug.ShopifyEntrypoint do
   `conn.private.valid_hmac` in the conn. You may want to handle this in your entry point
   by allowing the user without a valid HMAC to an install app page.
   """
-  def call(conn = %{params: %{"hmac" => hmac}}, _) do
+  def call(conn, _) do
+    token = get_token_from_conn(conn)
+
+    IO.inspect(token)
+
+    case Shopifex.Guardian.resource_from_token(token) do
+      {:ok, shop, _claims} ->
+        put_shop_in_session(conn, shop)
+
+      _ ->
+        initiate_new_session(conn)
+    end
+  end
+
+  defp get_token_from_conn(%Plug.Conn{params: %{"session_token" => session_token}}),
+    do: session_token
+
+  defp get_token_from_conn(%Plug.Conn{params: %{"token" => token}}), do: token
+
+  defp get_token_from_conn(_), do: nil
+
+  def put_shop_in_session(conn, shop) do
+    # Create a new token right away for the next request
+    {:ok, token, claims} = Shopifex.Guardian.encode_and_sign(shop)
+
+    conn
+    |> Guardian.Plug.put_current_resource(shop)
+    |> Guardian.Plug.put_current_claims(claims)
+    |> Guardian.Plug.put_current_token(token)
+    |> Plug.Conn.put_private(:shop_url, shop.url)
+    |> Plug.Conn.put_private(:shop, shop)
+  end
+
+  def initiate_new_session(conn = %{params: %{"hmac" => hmac}}) do
     hmac = String.upcase(hmac)
 
     query_string =
@@ -38,15 +72,50 @@ defmodule Shopifex.Plug.ShopifyEntrypoint do
 
     if our_hmac == hmac do
       conn
-      |> put_private(:valid_hmac, true)
+      |> do_initiate_new_session()
     else
-      conn
-      |> put_private(:valid_hmac, false)
+      respond_invalid(conn)
     end
   end
 
-  def call(conn, _) do
+  def initiate_new_session(conn), do: respond_invalid(conn)
+
+  @doc """
+  This function loads the session frame to get a temporary
+  session token JWT from Shopify app bridge. See load-session.js
+  """
+  def do_initiate_new_session(conn = %{params: %{"shop" => shop_url}}) do
+    redirect_after = build_redirect_after(conn)
+
     conn
-    |> put_private(:valid_hmac, false)
+    |> put_view(ShopifexWeb.AuthView)
+    |> put_layout({ShopifexWeb.LayoutView, "app.html"})
+    |> assign(:shop_url, shop_url)
+    |> assign(:redirect_after, redirect_after)
+    |> render("load-session.html")
+    |> halt()
+  end
+
+  @shopify_validation_params [
+    "hmac",
+    "locale",
+    "new_design_language",
+    "session",
+    "shop",
+    "timestamp"
+  ]
+  defp build_redirect_after(conn) do
+    # We won't need the Shopify validation params 'cause we are
+    # validating w/ JWT for the rest of the session's lifetime
+    params = Map.drop(conn.params, @shopify_validation_params)
+
+    conn.request_path <> "?" <> URI.encode_query(params)
+  end
+
+  defp respond_invalid(conn) do
+    conn
+    |> resp(:forbidden, "No valid session")
+    |> send_resp()
+    |> halt()
   end
 end
