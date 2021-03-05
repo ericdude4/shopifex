@@ -1,6 +1,6 @@
 defmodule Shopifex.Guardian do
-  @secret Application.compile_env!(:shopifex, :secret)
-  @app_name Application.compile_env!(:shopifex, :app_name)
+  @secret Application.get_env(:shopifex, :secret)
+  @app_name Application.get_env(:shopifex, :app_name)
 
   use Guardian,
     otp_app: :shopifex,

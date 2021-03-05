@@ -67,7 +67,7 @@ ShopifexWeb.Routes.pipelines()
 Now the following pipelines are accessible:
 
 - `:shopify_browser` -> Calls custom Shopifex fetch_flash amd removes iframe blocking headers as well as standard :browser pipeline stuff
-- `:shopify_session` -> Ensures that a valid store is currently loaded in the session and is accessible in your controllers/templates as `conn.private.shop`
+- `:shopify_session` -> Ensures that a valid store is currently loaded in the session and is accessible in your controllers/templates as `conn.private.shop`. Also places a JWT in the session which can be accessed via `Guardian.Plug.current_token/1` and passed to your front end for making authorized requests.
 - `:shopify_webhook` -> Validates webhook request HMAC and makes shop accessible in your controllers/templates as `conn.private.shop`
 - `:admin_links` -> fetches flash and removes iframe headers. Useful for admin link endpoints
 
