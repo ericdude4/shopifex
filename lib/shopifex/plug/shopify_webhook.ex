@@ -67,9 +67,6 @@ defmodule Shopifex.Plug.ShopifyWebhook do
           end
       end
 
-    IO.inspect(our_hmac)
-    IO.inspect(their_hmac)
-
     if our_hmac == their_hmac do
       shop =
         case Plug.Conn.get_req_header(conn, "x-shopify-shop-domain") do
