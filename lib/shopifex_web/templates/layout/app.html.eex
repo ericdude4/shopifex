@@ -9,8 +9,8 @@
       rel="stylesheet"
       href="https://unpkg.com/@shopify/polaris@4.22.0/styles.min.css"
     />
-    <link rel="stylesheet" href="/shopifex-assets/css/app.css"/>
-    <script defer type="text/javascript" src="/shopifex-assets/js/app.js"></script>
+    <link rel="stylesheet" href="<%= Application.get_env(:shopifex, :path_prefix, "") %>/shopifex-assets/css/app.css"/>
+    <script defer type="text/javascript" src="<%= Application.get_env(:shopifex, :path_prefix, "") %>/shopifex-assets/js/app.js"></script>
     <%= Phoenix.HTML.Tag.csrf_meta_tag() %>
   </head>
   <body>
