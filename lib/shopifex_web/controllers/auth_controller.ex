@@ -60,19 +60,10 @@ defmodule ShopifexWeb.AuthController do
       require Logger
 
       def auth(conn, _) do
-        case Guardian.Plug.current_resource(conn) do
-          nil ->
-            conn
-            |> put_view(ShopifexWeb.AuthView)
-            |> put_layout({ShopifexWeb.LayoutView, "app.html"})
-            |> render("select-store.html")
+        path_prefix = Application.get_env(:shopifex, :path_prefix, "")
 
-          shop ->
-            path_prefix = Application.get_env(:shopifex, :path_prefix, "")
-
-            conn
-            |> redirect(to: path_prefix <> "/?token=" <> Guardian.Plug.current_token(conn))
-        end
+        conn
+        |> redirect(to: path_prefix <> "/?token=" <> Guardian.Plug.current_token(conn))
       end
 
       def initialize_installation(conn, %{"shop" => shop_url}) do

@@ -1,6 +1,7 @@
 defmodule Shopifex.Plug.ShopifySession do
   import Plug.Conn
   import Phoenix.Controller
+  require Logger
 
   def init(options) do
     # initialize options
@@ -26,19 +27,7 @@ defmodule Shopifex.Plug.ShopifySession do
 
   defp get_token_from_conn(_), do: nil
 
-  def put_shop_in_session(conn, shop) do
-    # Create a new token right away for the next request
-    {:ok, token, claims} = Shopifex.Guardian.encode_and_sign(shop)
-
-    conn
-    |> Guardian.Plug.put_current_resource(shop)
-    |> Guardian.Plug.put_current_claims(claims)
-    |> Guardian.Plug.put_current_token(token)
-    |> Plug.Conn.put_private(:shop_url, shop.url)
-    |> Plug.Conn.put_private(:shop, shop)
-  end
-
-  def initiate_new_session(conn = %{params: %{"hmac" => hmac}}) do
+  defp initiate_new_session(conn = %{params: %{"hmac" => hmac}}) do
     hmac = String.upcase(hmac)
 
     query_string =
@@ -65,44 +54,46 @@ defmodule Shopifex.Plug.ShopifySession do
 
     if our_hmac == hmac do
       conn
-      |> do_initiate_new_session()
+      |> do_new_session()
     else
       respond_invalid(conn)
     end
   end
 
-  def initiate_new_session(conn), do: respond_invalid(conn)
+  defp initiate_new_session(conn), do: respond_invalid(conn)
 
-  @doc """
-  This function loads the session frame to get a temporary
-  session token JWT from Shopify app bridge. See load-session.js
-  """
-  def do_initiate_new_session(conn = %{params: %{"shop" => shop_url}}) do
-    redirect_after = build_redirect_after(conn)
+  defp do_new_session(conn = %{params: %{"shop" => shop_url}}) do
+    case Shopifex.Shops.get_shop_by_url(shop_url) do
+      nil -> redirect_to_install(conn, shop_url)
+      shop -> put_shop_in_session(conn, shop)
+    end
+  end
+
+  defp redirect_to_install(conn, shop_url) do
+    Logger.info("Initiating shop installation for #{shop_url}")
+
+    install_url =
+      "https://#{shop_url}/admin/oauth/authorize?client_id=#{
+        Application.fetch_env!(:shopifex, :api_key)
+      }&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{
+        Application.fetch_env!(:shopifex, :redirect_uri)
+      }"
 
     conn
-    |> put_view(ShopifexWeb.AuthView)
-    |> put_layout({ShopifexWeb.LayoutView, "app.html"})
-    |> assign(:shop_url, shop_url)
-    |> assign(:redirect_after, redirect_after)
-    |> render("load-session.html")
+    |> redirect(external: install_url)
     |> halt()
   end
 
-  @shopify_validation_params [
-    "hmac",
-    "locale",
-    "new_design_language",
-    "session",
-    "shop",
-    "timestamp"
-  ]
-  defp build_redirect_after(conn) do
-    # We won't need the Shopify validation params 'cause we are
-    # validating w/ JWT for the rest of the session's lifetime
-    params = Map.drop(conn.params, @shopify_validation_params)
+  def put_shop_in_session(conn, shop) do
+    # Create a new token right away for the next request
+    {:ok, token, claims} = Shopifex.Guardian.encode_and_sign(shop)
 
-    conn.request_path <> "?" <> URI.encode_query(params)
+    conn
+    |> Guardian.Plug.put_current_resource(shop)
+    |> Guardian.Plug.put_current_claims(claims)
+    |> Guardian.Plug.put_current_token(token)
+    |> Plug.Conn.put_private(:shop_url, shop.url)
+    |> Plug.Conn.put_private(:shop, shop)
   end
 
   defp respond_invalid(conn) do
