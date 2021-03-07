@@ -7,7 +7,6 @@ import enTranslations from '@shopify/polaris/locales/en.json'
 import '@shopify/polaris/styles.css'
 
 import ShowPlans from './components/show-plans'
-
 function WrappedShowPlans(props) {
   return (
     <AppProvider i18n={enTranslations}>

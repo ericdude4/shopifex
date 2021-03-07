@@ -7,11 +7,13 @@
     "watch": "webpack --mode development --watch"
   },
   "dependencies": {
+    "@shopify/app-bridge": "^1.29.0",
+    "@shopify/app-bridge-utils": "^1.29.0",
     "@shopify/polaris": "^4.22.0",
+    "axios": "^0.21.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-phoenix": "file:../deps/react_phoenix",
-    "axios": "^0.21.1"
+    "react-phoenix": "file:../deps/react_phoenix"
   },
   "devDependencies": {
     "@babel/core": "^7.0.0",

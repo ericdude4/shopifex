@@ -1,4 +1,4 @@
-defmodule Shopifex.Plug.ShopifyEntrypoint do
+defmodule Shopifex.Plug.ValidateHmac do
   import Plug.Conn
 
   def init(options) do
@@ -6,11 +6,6 @@ defmodule Shopifex.Plug.ShopifyEntrypoint do
     options
   end
 
-  @doc """
-  Ensures that the connection has a valid Shopify HMAC token in the URL param, then sets
-  `conn.private.valid_hmac` in the conn. You may want to handle this in your entry point
-  by allowing the user without a valid HMAC to an install app page.
-  """
   def call(conn = %{params: %{"hmac" => hmac}}, _) do
     hmac = String.upcase(hmac)
 
@@ -38,15 +33,15 @@ defmodule Shopifex.Plug.ShopifyEntrypoint do
 
     if our_hmac == hmac do
       conn
-      |> put_private(:valid_hmac, true)
     else
-      conn
-      |> put_private(:valid_hmac, false)
+      respond_invalid(conn)
     end
   end
 
-  def call(conn, _) do
+  defp respond_invalid(conn) do
     conn
-    |> put_private(:valid_hmac, false)
+    |> resp(:forbidden, "No valid HMAC")
+    |> send_resp()
+    |> halt()
   end
 end

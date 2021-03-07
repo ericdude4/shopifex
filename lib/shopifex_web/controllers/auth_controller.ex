@@ -59,56 +59,15 @@ defmodule ShopifexWeb.AuthController do
 
       require Logger
 
-      # get authorization token for the shop and save the shop in the DB
-      # The session parameter indicates that this is an entry point request
-      def auth(conn, %{"shop" => shop_url, "session" => _session}) do
-        if Regex.match?(~r/^.*\.myshopify\.com/, shop_url) do
-          conn = put_flash(conn, :shop_url, shop_url)
-          # check if store is in the system already:
-          case Shopifex.Shops.get_shop_by_url(shop_url) do
-            nil ->
-              # If not, prompt user for install
-              install_url =
-                "https://#{shop_url}/admin/oauth/authorize?client_id=#{
-                  Application.fetch_env!(:shopifex, :api_key)
-                }&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{
-                  Application.fetch_env!(:shopifex, :redirect_uri)
-                }"
+      def auth(conn, _) do
+        path_prefix = Application.get_env(:shopifex, :path_prefix, "")
 
-              conn
-              |> redirect(external: install_url)
-
-            shop ->
-              # If so, place the shop in the session and proceed to the app index
-              # This should be an overridable function instead of hard-coded here
-              if conn.private.valid_hmac do
-                path_prefix = Application.get_env(:shopifex, :path_prefix, "")
-
-                conn
-                |> put_flash(:shop, shop)
-                |> redirect(to: path_prefix <> "/")
-              else
-                send_resp(
-                  conn,
-                  403,
-                  "A store was found, but no valid HMAC parameter was provided. Please load this app within the #{
-                    shop_url
-                  } admin panel."
-                )
-              end
-          end
-        else
-          conn
-          |> put_view(ShopifexWeb.AuthView)
-          |> put_layout({ShopifexWeb.LayoutView, "app.html"})
-          |> put_flash(:error, "Invalid shop URL. Must be in the format *.myshopify.com")
-          |> render("select-store.html")
-        end
+        conn
+        |> redirect(to: path_prefix <> "/?token=" <> Guardian.Plug.current_token(conn))
       end
 
-      def auth(conn, %{"shop" => shop_url}) do
+      def initialize_installation(conn, %{"shop" => shop_url}) do
         if Regex.match?(~r/^.*\.myshopify\.com/, shop_url) do
-          conn = put_flash(conn, :shop_url, shop_url)
           # check if store is in the system already:
           case Shopifex.Shops.get_shop_by_url(shop_url) do
             nil ->
@@ -125,27 +84,17 @@ defmodule ShopifexWeb.AuthController do
               |> redirect(external: install_url)
 
             shop ->
-              if conn.private.valid_hmac do
-                Logger.info("Initiating shop reinstallation for #{shop_url}")
+              Logger.info("Initiating shop reinstallation for #{shop_url}")
 
-                reinstall_url =
-                  "https://#{shop_url}/admin/oauth/request_grant?client_id=#{
-                    Application.fetch_env!(:shopifex, :api_key)
-                  }&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{
-                    Application.fetch_env!(:shopifex, :reinstall_uri)
-                  }"
+              reinstall_url =
+                "https://#{shop_url}/admin/oauth/request_grant?client_id=#{
+                  Application.fetch_env!(:shopifex, :api_key)
+                }&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{
+                  Application.fetch_env!(:shopifex, :reinstall_uri)
+                }"
 
-                conn
-                |> redirect(external: reinstall_url)
-              else
-                send_resp(
-                  conn,
-                  403,
-                  "A store was found, but no valid HMAC parameter was provided. Please load this app within the #{
-                    shop_url
-                  } admin panel."
-                )
-              end
+              conn
+              |> redirect(external: reinstall_url)
           end
         else
           conn
@@ -154,13 +103,6 @@ defmodule ShopifexWeb.AuthController do
           |> put_flash(:error, "Invalid shop URL")
           |> render("select-store.html")
         end
-      end
-
-      def auth(conn, _) do
-        conn
-        |> put_view(ShopifexWeb.AuthView)
-        |> put_layout({ShopifexWeb.LayoutView, "app.html"})
-        |> render("select-store.html")
       end
 
       @impl ShopifexWeb.AuthController
@@ -176,7 +118,7 @@ defmodule ShopifexWeb.AuthController do
         Shopifex.Shops.create_shop(shop)
       end
 
-      def install(conn = %{private: %{valid_hmac: true}}, %{"code" => code, "shop" => shop_url}) do
+      def install(conn, %{"code" => code, "shop" => shop_url}) do
         url = "https://#{shop_url}/admin/oauth/access_token"
 
         case(
@@ -206,7 +148,7 @@ defmodule ShopifexWeb.AuthController do
         end
       end
 
-      def update(conn = %{private: %{valid_hmac: true}}, %{"code" => code, "shop" => shop_url}) do
+      def update(conn, %{"code" => code, "shop" => shop_url}) do
         url = "https://#{shop_url}/admin/oauth/access_token"
 
         case(

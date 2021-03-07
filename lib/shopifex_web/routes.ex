@@ -14,8 +14,8 @@ defmodule ShopifexWeb.Routes do
         plug(Shopifex.Plug.ShopifySession)
       end
 
-      pipeline :shopify_entrypoint do
-        plug(Shopifex.Plug.ShopifyEntrypoint)
+      pipeline :validate_hmac do
+        plug(Shopifex.Plug.ValidateHmac)
       end
 
       pipeline :shopify_webhook do
@@ -36,10 +36,19 @@ defmodule ShopifexWeb.Routes do
   defmacro auth_routes(app_web_module \\ ShopifexWeb) do
     quote do
       scope "/auth", unquote(app_web_module) do
-        pipe_through([:shopify_browser, :shopify_entrypoint])
+        pipe_through([:shopify_browser, :shopify_session])
         get("/", AuthController, :auth)
+      end
+
+      scope "/auth", unquote(app_web_module) do
+        pipe_through([:shopify_browser, :validate_hmac])
         get("/install", AuthController, :install)
         get("/update", AuthController, :update)
+      end
+
+      scope "/initialize-installation", unquote(app_web_module) do
+        pipe_through([:shopify_browser])
+        get("/", AuthController, :initialize_installation)
       end
     end
   end
