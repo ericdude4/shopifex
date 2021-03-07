@@ -20,9 +20,6 @@ defmodule Shopifex.Plug.ShopifySession do
     end
   end
 
-  defp get_token_from_conn(%Plug.Conn{params: %{"session_token" => session_token}}),
-    do: session_token
-
   defp get_token_from_conn(%Plug.Conn{params: %{"token" => token}}), do: token
 
   defp get_token_from_conn(_), do: nil
