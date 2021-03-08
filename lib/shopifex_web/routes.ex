@@ -5,7 +5,6 @@ defmodule ShopifexWeb.Routes do
         plug(:accepts, ["html"])
         plug(:fetch_session)
         plug(Shopifex.Plug.FetchFlash)
-        plug(:protect_from_forgery)
         plug(:put_secure_browser_headers)
         plug(Shopifex.Plug.LoadInIframe)
       end
@@ -60,6 +59,10 @@ defmodule ShopifexWeb.Routes do
 
         get("/show-plans", PaymentController, :show_plans)
         post("/select-plan", PaymentController, :select_plan)
+      end
+
+      scope "/payment", unquote(app_web_module) do
+        pipe_through([:shopify_browser])
         get("/complete", PaymentController, :complete_payment)
       end
     end

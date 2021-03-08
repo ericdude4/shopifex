@@ -100,4 +100,16 @@ defmodule Shopifex.Plug.ShopifySession do
     |> render("select-store.html")
     |> halt()
   end
+
+  @doc """
+  Returns the token for the current session in a plug which has
+  passed through the `:shopify_session` pipeline, or the
+  `Shopifex.Plug.ShopifySession` plug.
+
+  ## Example
+      iex> session_token(conn)
+      "header.payload.signature"
+  """
+  @spec session_token(Plug.Conn.t()) :: Guardian.Token.token() | nil
+  def session_token(conn), do: Guardian.Plug.current_token(conn)
 end

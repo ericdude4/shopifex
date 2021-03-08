@@ -21,16 +21,13 @@ export default class ShowPlans extends React.Component {
     }
 
     selectPlan(plan) {
-        let csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content')
         axios.post
             (
                 "/payment/select-plan",
                 {
                     plan_id: plan.id,
-                    redirect_after: this.props.redirectAfter
-                },
-                {
-                    headers: { "x-csrf-token": csrfToken }
+                    redirect_after: this.props.redirectAfter,
+                    token: this.props.sessionToken
                 }
             )
             .then(resp => {

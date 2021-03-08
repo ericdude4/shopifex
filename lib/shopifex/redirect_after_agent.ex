@@ -7,6 +7,8 @@ defmodule Shopifex.RedirectAfterAgent do
     Agent.start_link(fn -> %{} end, name: __MODULE__)
   end
 
+  def get(charge_id) when is_binary(charge_id), do: get(String.to_integer(charge_id))
+
   def get(charge_id) do
     Logger.info("Getting redirect_uri for charge #{charge_id}")
     redirect_uri = Agent.get(__MODULE__, &Map.get(&1, charge_id))

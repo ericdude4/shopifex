@@ -11,7 +11,6 @@
     />
     <link rel="stylesheet" href="<%= Application.get_env(:shopifex, :path_prefix, "") %>/shopifex-assets/css/app.css"/>
     <script defer type="text/javascript" src="<%= Application.get_env(:shopifex, :path_prefix, "") %>/shopifex-assets/js/app.js"></script>
-    <%= Phoenix.HTML.Tag.csrf_meta_tag() %>
   </head>
   <body>
     <%= @inner_content %>

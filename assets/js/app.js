@@ -10,7 +10,14 @@ import ShowPlans from './components/show-plans'
 function WrappedShowPlans(props) {
   return (
     <AppProvider i18n={enTranslations}>
-      <ShowPlans plans={props.plans} guard={props.guard} shopUrl={props.shop_url} redirectAfter={props.redirect_after} shopifyApiKey={props.shopify_api_key} />
+      <ShowPlans 
+        plans={props.plans} 
+        guard={props.guard} 
+        shopUrl={props.shop_url} 
+        redirectAfter={props.redirect_after} 
+        shopifyApiKey={props.shopify_api_key}
+        sessionToken={props.session_token}
+      />
     </AppProvider>
   )
 }

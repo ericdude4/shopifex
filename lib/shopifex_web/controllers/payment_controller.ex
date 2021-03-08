@@ -23,45 +23,28 @@ defmodule ShopifexWeb.PaymentController do
 
   ## Example
 
-      def after_payment(conn, shop, plan, grant) do
+      def after_payment(conn, shop, plan, grant, redirect_after) do
         # send yourself an e-mail about payment
 
         # follow default behaviour.
-        super(conn, shop, plan, grant)
+        super(conn, shop, plan, grant, redirect_after)
       end
   """
   @callback after_payment(
               Plug.Conn.t(),
               Ecto.Schema.t(),
               Ecto.Schema.t(),
-              Ecto.Schema.t()
+              Ecto.Schema.t(),
+              String.t()
             ) ::
               Plug.Conn.t()
-  @optional_callbacks after_payment: 4
+  @optional_callbacks after_payment: 5
 
   defmacro __using__(_opts) do
     quote do
       @behaviour ShopifexWeb.PaymentController
 
       require Logger
-
-      @doc """
-      Displays a list of available plans with which the user can access
-      the guarded feature
-      """
-      def show_plans(conn, %{"guard" => guard, "redirect_after" => redirect_after}) do
-        plans = Shopifex.Shops.list_plans_granting_guard(guard)
-
-        conn
-        |> put_view(ShopifexWeb.PaymentView)
-        |> put_layout({ShopifexWeb.LayoutView, "app.html"})
-        |> render("show-plans.html",
-          plans: plans,
-          guard: guard,
-          redirect_after: redirect_after,
-          shop_url: conn.private.shop_url
-        )
-      end
 
       def select_plan(conn, %{"plan_id" => plan_id, "redirect_after" => redirect_after}) do
         plan = Shopifex.Shops.get_plan!(plan_id)
@@ -126,29 +109,40 @@ defmodule ShopifexWeb.PaymentController do
             "charge_id" => charge_id,
             "plan_id" => plan_id
           }) do
-        plan = Shopifex.Shops.get_plan!(plan_id)
-        shop = conn.private.shop
+        # Shopify's API doesn't provide an HMAC validation on
+        # this return-url. Use the token param in the redirect_after
+        # url that is associated with this charge_id to validate
+        # the request and get the current shop
+        with redirect_after when redirect_after != nil <-
+               Shopifex.RedirectAfterAgent.get(charge_id),
+             redirect_after <- URI.decode_www_form(redirect_after),
+             %URI{query: query} <- URI.parse(redirect_after),
+             %{"token" => token} <- URI.decode_query(query),
+             {:ok, shop, _claims} <- Shopifex.Guardian.resource_from_token(token) do
+          plan = Shopifex.Shops.get_plan!(plan_id)
 
-        {:ok, grant} =
-          Shopifex.Shops.create_grant(%{
-            shop: shop,
-            charge_id: charge_id,
-            grants: plan.grants,
-            remaining_usages: plan.usages
-          })
+          {:ok, grant} =
+            Shopifex.Shops.create_grant(%{
+              shop: shop,
+              charge_id: charge_id,
+              grants: plan.grants,
+              remaining_usages: plan.usages
+            })
 
-        after_payment(conn, shop, plan, grant)
+          after_payment(conn, shop, plan, grant, redirect_after)
+        else
+          _ ->
+            {:error, :forbidden}
+        end
       end
 
       @impl ShopifexWeb.PaymentController
-      def after_payment(conn, shop, plan, grant) do
-        redirect_after = Shopifex.RedirectAfterAgent.get(grant.charge_id)
-
+      def after_payment(conn, shop, plan, grant, redirect_after) do
         api_key = Application.get_env(:shopifex, :api_key)
         redirect(conn, external: "https://#{shop.url}/admin/apps/#{api_key}#{redirect_after}")
       end
 
-      defoverridable after_payment: 4
+      defoverridable after_payment: 5
     end
   end
 end

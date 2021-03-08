@@ -1,5 +1,6 @@
 defmodule Shopifex.Plug.PaymentGuard do
   import Plug.Conn
+  import Phoenix.Controller
   require Logger
 
   def init(options) do
@@ -16,12 +17,14 @@ defmodule Shopifex.Plug.PaymentGuard do
     case payment_guard.grant_for_guard(conn.private.shop, guard_identifier) do
       nil ->
         Logger.info("Payment guard blocked request")
-
         redirect_after = URI.encode_www_form("#{conn.request_path}?#{conn.query_string}")
 
         conn
-        |> Phoenix.Controller.redirect(
-          to: "/payment/show-plans?guard=#{guard_identifier}&redirect_after=#{redirect_after}"
+        |> put_view(ShopifexWeb.PaymentView)
+        |> put_layout({ShopifexWeb.LayoutView, "app.html"})
+        |> render("show-plans.html",
+          guard: guard_identifier,
+          redirect_after: redirect_after
         )
         |> halt()
 
