@@ -157,7 +157,7 @@ defmodule MyAppWeb.WebhookController do
 end
 ```
 ## Maintaining session between page loads
-As browsers continue to restrict cookies, cookies becoming more unreliable as a method for maintaining a session within an iFrame. To address this, Shopify recommends passing a JWT session token back and forth between requests.
+As browsers continue to restrict cookies, cookies become more unreliable as a method for maintaining a session within an iFrame. To address this, Shopify recommends passing a JWT session token back and forth between requests.
 
 Shopifex makes a token accessible with `Guardian.Plug.current_token(conn)` in any controller which is behind the `:shopify_session` router pipeline.
 ### Multi-page Applications
