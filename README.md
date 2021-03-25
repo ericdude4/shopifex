@@ -156,6 +156,66 @@ defmodule MyAppWeb.WebhookController do
   end
 end
 ```
+## Maintaining session between page loads
+As browsers continue to restrict cookies, cookies become more unreliable as a method for maintaining a session within an iFrame. To address this, Shopify recommends passing a JWT session token back and forth between requests.
+
+Shopifex makes a token accessible with `Guardian.Plug.current_token(conn)` in any controller which is behind the `:shopify_session` router pipeline.
+### Multi-page Applications
+Ensure there is a `token` parameter sent along in any requests which you would like to maintain session between.
+
+EEx template link:
+```elixir
+<%= link "home", to: Routes.page_path(@conn, :index, %{token: Guardian.Plug.current_token(conn)}) %>
+```
+EEx template form:
+```elixir
+<%= form_for :foo, Routes.foo_path(MyApp.Endpoint, :new), fn f -> %>
+  <%= hidden_input, f, :token, value: Guardian.Plug.current_token(conn) %>
+  <%= submit "Submit" %>
+<% end %>
+```
+### Single-page Applications
+Add `{:guardian, "~> 2.0"}` as a dependency in `mix.exs`.
+
+Create another pipeline in `router.ex`:
+```elixir
+pipeline :authorized do
+  plug(
+    Guardian.Plug.Pipeline,
+    module: Shopifex.Guardian,
+    error_handler: ShopifyAppWeb.AuthErrorHandler
+  )
+
+  plug Guardian.Plug.VerifyHeader
+  plug Guardian.Plug.EnsureAuthenticated
+  plug Guardian.Plug.LoadResource
+end
+
+scope "/product", ShopifyAppWeb do
+  pipe_through [:api, :authorized]
+
+  get "/", ProductController, :index
+end
+```
+
+Pass the session token to your front end by adding it in the head of your template `app.html.eex`:
+```html
+<head>
+  ...
+  <script>
+    window.sessionToken = <%= Guardian.Plug.current_token(conn) %>;
+  </script>
+</head>
+```
+
+Then use it in your async requests:
+```javascript
+const result = await fetch(`/products`, {
+    headers: {
+      Authorization: `Bearer ${window.sessionToken}`,
+    },
+  });
+```
 ## Update app permissions
 
 You can also update the app permissions after installation. To do so, first you have to add `your-redirect-url.com/auth/update` to Shopify's whitelist.
