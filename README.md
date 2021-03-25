@@ -4,6 +4,8 @@ A simple boilerplate package for creating Shopify embedded apps with the Elixir 
 
 For from-scratch setup instructions (slightly out of date), read [Create an Elixir Phoenix Shopify App in 5 Minutes](https://medium.com/@ericdude4/create-an-elixir-phoenix-shopify-app-in-5-minutes-ca308bc42216)
 
+## Notice: Shopify changed their HMAC calculation witout warning. If your admin links no longer work, upgrade to `:shopifex ~> 0.5.2`
+
 ## Installation
 
 The package can be installed
