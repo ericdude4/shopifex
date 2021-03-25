@@ -15,7 +15,7 @@ defmodule Shopifex.Plug.ShopifyWebhook do
       case conn.method do
         "GET" ->
           query_string =
-            conn.params
+            conn.query_params
             |> Enum.map(fn
               {"hmac", _value} ->
                 nil
