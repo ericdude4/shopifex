@@ -2,6 +2,17 @@ defmodule Shopifex.RedirectAfterAgent do
   use Agent
   require Logger
 
+  @doc """
+  Retrieve the redirect url from cache with key charge_id and
+  remove the key from cache.
+  """
+  @callback get(charge_id :: String.t() | pos_integer()) :: String.t() | nil
+
+  @doc """
+  Set a redirect url in cache with key charge_id
+  """
+  @callback set(charge_id :: pos_integer(), redirect_uri :: String.t()) :: :ok
+
   def start_link(_) do
     Logger.info("Starting redirect_uri agent")
     Agent.start_link(fn -> %{} end, name: __MODULE__)

@@ -53,6 +53,7 @@ defmodule Shopifex.Plug.ShopifySession do
       conn
       |> do_new_session()
     else
+      Logger.info("Invalid HMAC, expected #{our_hmac}")
       respond_invalid(conn)
     end
   end

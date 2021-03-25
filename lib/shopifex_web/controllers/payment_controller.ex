@@ -46,13 +46,30 @@ defmodule ShopifexWeb.PaymentController do
 
       require Logger
 
+      def show_plans(conn, params) do
+        payment_guard = Application.fetch_env!(:shopifex, :payment_guard)
+        path_prefix = Application.get_env(:shopifex, :path_prefix, "")
+        default_redirect_after = path_prefix <> "/?token=" <> Guardian.Plug.current_token(conn)
+
+        payment_guard.show_plans(
+          conn,
+          Map.get(params, "guard_identifier"),
+          Map.get(params, "redirect_after", default_redirect_after)
+        )
+      end
+
       def select_plan(conn, %{"plan_id" => plan_id, "redirect_after" => redirect_after}) do
-        plan = Shopifex.Shops.get_plan!(plan_id)
+        payment_guard = Application.fetch_env!(:shopifex, :payment_guard)
+
+        redirect_after_agent =
+          Application.get_env(:shopifex, :redirect_after_agent, Shopifex.RedirectAfterAgent)
+
+        plan = payment_guard.get_plan(plan_id)
         shop = conn.private.shop
 
         {:ok, charge} = create_charge(shop, plan)
 
-        Shopifex.RedirectAfterAgent.set(charge["id"], redirect_after)
+        redirect_after_agent.set(charge["id"], redirect_after)
 
         send_resp(conn, 200, Jason.encode!(charge))
       end
@@ -109,25 +126,24 @@ defmodule ShopifexWeb.PaymentController do
             "charge_id" => charge_id,
             "plan_id" => plan_id
           }) do
+        redirect_after_agent =
+          Application.get_env(:shopifex, :redirect_after_agent, Shopifex.RedirectAfterAgent)
+
         # Shopify's API doesn't provide an HMAC validation on
         # this return-url. Use the token param in the redirect_after
         # url that is associated with this charge_id to validate
         # the request and get the current shop
         with redirect_after when redirect_after != nil <-
-               Shopifex.RedirectAfterAgent.get(charge_id),
+               redirect_after_agent.get(charge_id),
              redirect_after <- URI.decode_www_form(redirect_after),
              %URI{query: query} <- URI.parse(redirect_after),
              %{"token" => token} <- URI.decode_query(query),
              {:ok, shop, _claims} <- Shopifex.Guardian.resource_from_token(token) do
-          plan = Shopifex.Shops.get_plan!(plan_id)
+          payment_guard = Application.fetch_env!(:shopifex, :payment_guard)
 
-          {:ok, grant} =
-            Shopifex.Shops.create_grant(%{
-              shop: shop,
-              charge_id: charge_id,
-              grants: plan.grants,
-              remaining_usages: plan.usages
-            })
+          plan = payment_guard.get_plan(plan_id)
+
+          {:ok, grant} = payment_guard.create_grant(shop, plan, charge_id)
 
           after_payment(conn, shop, plan, grant, redirect_after)
         else
@@ -137,7 +153,7 @@ defmodule ShopifexWeb.PaymentController do
       end
 
       @impl ShopifexWeb.PaymentController
-      def after_payment(conn, shop, plan, grant, redirect_after) do
+      def after_payment(conn, shop, _plan, _grant, redirect_after) do
         api_key = Application.get_env(:shopifex, :api_key)
         redirect(conn, external: "https://#{shop.url}/admin/apps/#{api_key}#{redirect_after}")
       end

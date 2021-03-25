@@ -3,22 +3,61 @@ defmodule Shopifex.PaymentGuard do
   Context behaviour responsible for fetching and using payment grants.
   """
 
+  @type plan :: %{
+          id: String.t() | pos_integer(),
+          name: String.t(),
+          price: String.t(),
+          type: String.t(),
+          test: boolean()
+        }
+
   @doc """
   Returns a payment record which grants access to the payment guard. Filters
   where `remaining_usages` is greater than 0 or has a nil value (unlimited usage).
   """
   @callback grant_for_guard(Ecto.Schema.t(), Ecto.Schema.t()) :: Ecto.Schema.t()
+
   @doc """
   Updates the grant to reflect the usage of it in some way. Defaults to decrementing
   the `remaining_usages` property if it's not nil. If it is nil, the grant has
   unlimited usages
   """
   @callback use_grant(Ecto.Schema.t(), Ecto.Schema.t()) :: Ecto.Schema.t()
-  @optional_callbacks grant_for_guard: 2, use_grant: 2
+
+  @doc """
+  After payment has been accepted, this function is meant to persist the
+  payment. Default behaviour is to create a grant schema record. `charge_id` is
+  the external id for the Shopify charge record.
+  """
+  @callback create_grant(shop :: Ecto.Schema.t(), plan :: plan(), charge_id :: pos_integer()) ::
+              {:ok, map()}
+
+  @doc """
+  Gets a plan with a given identifier
+  """
+  @callback get_plan(plan_id :: String.t() | pos_integer()) :: plan()
+
+  @doc """
+  Display the available payment plans for the user to select.
+  """
+  @callback show_plans(
+              conn :: Plug.Conn.t(),
+              guard_identifier :: String.t(),
+              redirect_after :: String.t()
+            ) :: Plug.Conn.t()
+
+  @optional_callbacks grant_for_guard: 2,
+                      use_grant: 2,
+                      get_plan: 1,
+                      show_plans: 3,
+                      create_grant: 3
+
   defmacro __using__(_opts) do
     quote do
       @behaviour Shopifex.PaymentGuard
 
+      import Plug.Conn, only: [halt: 1]
+      import Phoenix.Controller, only: [put_view: 2, put_layout: 2, render: 3]
       import Ecto.Query, warn: false
       alias Ecto.Changeset
 
@@ -34,6 +73,11 @@ defmodule Shopifex.PaymentGuard do
           or_where: s.remaining_usages > 0
         )
         |> repo().one()
+      end
+
+      @impl Shopifex.PaymentGuard
+      def get_plan(plan_id) do
+        Shopifex.Shops.get_plan!(plan_id)
       end
 
       @impl Shopifex.PaymentGuard
@@ -60,7 +104,28 @@ defmodule Shopifex.PaymentGuard do
            ),
            do: Changeset.change(grant_changeset, %{remaining_usages: remaining_usages - 1})
 
-      defoverridable grant_for_guard: 2, use_grant: 2
+      @impl Shopifex.PaymentGuard
+      def show_plans(conn, guard_identifier, redirect_after) do
+        conn
+        |> put_view(ShopifexWeb.PaymentView)
+        |> put_layout({ShopifexWeb.LayoutView, "app.html"})
+        |> render("show-plans.html",
+          guard: guard_identifier,
+          redirect_after: redirect_after
+        )
+      end
+
+      @impl Shopifex.PaymentGuard
+      def create_grant(shop, plan, charge_id) do
+        Shopifex.Shops.create_grant(%{
+          shop: shop,
+          charge_id: charge_id,
+          grants: plan.grants,
+          remaining_usages: plan.usages
+        })
+      end
+
+      defoverridable grant_for_guard: 2, use_grant: 2, show_plans: 3, get_plan: 1, create_grant: 3
     end
   end
 end
