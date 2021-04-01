@@ -74,6 +74,48 @@ defmodule ShopifexWeb.PaymentController do
         send_resp(conn, 200, Jason.encode!(charge))
       end
 
+      # annual billing is only possible w/ the GraphQL API
+      defp create_charge(shop, plan = %{type: "recurring_application_charge", annual: true}) do
+        redirect_uri = Application.get_env(:shopifex, :payment_redirect_uri)
+
+        case Neuron.query(
+               """
+               mutation appSubscriptionCreate($name: String!, $return_url: URL!, $test: Boolean!, $price: Decimal!) {
+                 appSubscriptionCreate(name: $name, returnUrl: $return_url, test: $test, lineItems: [{plan: {appRecurringPricingDetails: {price: {amount: $price, currencyCode: USD}, interval: ANNUAL}}}]) {
+                   appSubscription {
+                     id
+                   }
+                   confirmationUrl
+                   userErrors {
+                     field
+                     message
+                   }
+                 }
+               }
+               """,
+               %{
+                 name: plan.name,
+                 price: plan.price,
+                 test: plan.test,
+                 return_url: "#{redirect_uri}?plan_id=#{plan.id}"
+               },
+               url: "https://#{shop.url}/admin/api/2021-04/graphql.json",
+               headers: [
+                 "X-Shopify-Access-Token": shop.access_token,
+                 "Content-Type": "application/json"
+               ]
+             ) do
+          {:ok, %Neuron.Response{body: body}} ->
+            app_subscription_create = body["data"]["appSubscriptionCreate"]
+
+            # id comes back in this format: "gid://shopify/AppSubscription/4019552312"
+            <<_::binary-size(30)>> <> id = app_subscription_create["appSubscription"]["id"]
+            confirmation_url = app_subscription_create["confirmationUrl"]
+
+            {:ok, %{"id" => id, "confirmation_url" => confirmation_url}}
+        end
+      end
+
       defp create_charge(shop, plan = %{type: "recurring_application_charge"}) do
         redirect_uri = Application.get_env(:shopifex, :payment_redirect_uri)
 
