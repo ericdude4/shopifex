@@ -9,11 +9,13 @@ defmodule Shopifex.Plug.ShopifySession do
   end
 
   def call(conn, _) do
-    token = get_token_from_conn(conn)
+    token = get_token_from_conn(conn) || Guardian.Plug.current_token(conn)
 
     case Shopifex.Guardian.resource_from_token(token) do
-      {:ok, shop, _claims} ->
-        put_shop_in_session(conn, shop)
+      {:ok, shop, claims} ->
+        locale = get_locale(conn, claims)
+
+        put_shop_in_session(conn, shop, locale)
 
       _ ->
         initiate_new_session(conn)
@@ -23,6 +25,11 @@ defmodule Shopifex.Plug.ShopifySession do
   defp get_token_from_conn(%Plug.Conn{params: %{"token" => token}}), do: token
 
   defp get_token_from_conn(_), do: nil
+
+  defp get_locale(%Plug.Conn{params: %{"locale" => locale}}, _token_claims), do: locale
+
+  defp get_locale(_conn, token_claims),
+    do: Map.get(token_claims, "loc", Application.get_env(:shopifex, :default_locale, "en"))
 
   defp initiate_new_session(conn = %{params: %{"hmac" => hmac}}) do
     hmac = String.upcase(hmac)
@@ -60,10 +67,10 @@ defmodule Shopifex.Plug.ShopifySession do
 
   defp initiate_new_session(conn), do: respond_invalid(conn)
 
-  defp do_new_session(conn = %{params: %{"shop" => shop_url}}) do
+  defp do_new_session(conn = %{params: %{"shop" => shop_url, "locale" => locale}}) do
     case Shopifex.Shops.get_shop_by_url(shop_url) do
       nil -> redirect_to_install(conn, shop_url)
-      shop -> put_shop_in_session(conn, shop)
+      shop -> put_shop_in_session(conn, shop, locale)
     end
   end
 
@@ -82,9 +89,11 @@ defmodule Shopifex.Plug.ShopifySession do
     |> halt()
   end
 
-  def put_shop_in_session(conn, shop) do
+  def put_shop_in_session(conn, shop, locale \\ "en") do
+    Gettext.put_locale(locale)
+
     # Create a new token right away for the next request
-    {:ok, token, claims} = Shopifex.Guardian.encode_and_sign(shop)
+    {:ok, token, claims} = Shopifex.Guardian.encode_and_sign(shop, %{"loc" => locale})
 
     conn
     |> Guardian.Plug.put_current_resource(shop)
@@ -92,6 +101,7 @@ defmodule Shopifex.Plug.ShopifySession do
     |> Guardian.Plug.put_current_token(token)
     |> Plug.Conn.put_private(:shop_url, shop.url)
     |> Plug.Conn.put_private(:shop, shop)
+    |> Plug.Conn.put_private(:locale, locale)
   end
 
   defp respond_invalid(conn) do
