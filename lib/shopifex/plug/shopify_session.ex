@@ -67,10 +67,17 @@ defmodule Shopifex.Plug.ShopifySession do
 
   defp initiate_new_session(conn), do: respond_invalid(conn)
 
-  defp do_new_session(conn = %{params: %{"shop" => shop_url, "locale" => locale}}) do
+  defp do_new_session(conn = %{params: %{"shop" => shop_url} = params}) do
     case Shopifex.Shops.get_shop_by_url(shop_url) do
-      nil -> redirect_to_install(conn, shop_url)
-      shop -> put_shop_in_session(conn, shop, locale)
+      nil ->
+        redirect_to_install(conn, shop_url)
+
+      shop ->
+        put_shop_in_session(
+          conn,
+          shop,
+          Map.get(params, "locale", Application.get_env(:shopifex, :default_locale, "en"))
+        )
     end
   end
 
