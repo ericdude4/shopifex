@@ -78,7 +78,13 @@ defmodule Shopifex.Plug.ShopifyWebhook do
         end
         |> Shopifex.Shops.get_shop_by_url()
 
-      Shopifex.Plug.ShopifySession.put_shop_in_session(conn, shop)
+      if shop do
+        Shopifex.Plug.ShopifySession.put_shop_in_session(conn, shop)
+      else
+        conn
+        |> send_resp(404, "no store found with url")
+        |> halt()
+      end
     else
       Logger.info("HMAC doesn't match " <> our_hmac)
 

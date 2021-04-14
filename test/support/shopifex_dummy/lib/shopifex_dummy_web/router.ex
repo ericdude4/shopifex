@@ -11,4 +11,10 @@ defmodule ShopifexDummyWeb.Router do
 
     get("/", PageController, :index)
   end
+
+  scope "/webhook", ShopifexDummyWeb do
+    pipe_through [:shopify_webhook]
+
+    post "/", WebhookController, :action
+  end
 end

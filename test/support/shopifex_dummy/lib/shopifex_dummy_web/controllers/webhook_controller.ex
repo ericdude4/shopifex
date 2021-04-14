@@ -2,6 +2,11 @@ defmodule ShopifexDummyWeb.WebhookController do
   use ShopifexDummyWeb, :controller
   use ShopifexWeb.WebhookController
 
+  def handle_topic(conn, _shop, "foo/bar") do
+    conn
+    |> send_resp(200, "success")
+  end
+
   @doc """
   Simply delete the shop record
   """
