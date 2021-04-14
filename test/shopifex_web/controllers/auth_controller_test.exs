@@ -22,6 +22,8 @@ defmodule ShopifexWeb.AuthControllerTest do
 
     conn = get(conn, Routes.auth_path(@endpoint, :auth) <> "?#{query}")
 
+    [location] = Plug.Conn.get_resp_header(conn, "location")
+    assert location == "https://shopifex.myshopify.com/admin/oauth/authorize?client_id=thisisafakeapikey&scope=read_inventory&redirect_uri=https://shopifex-dummy.com/auth/install"
     assert conn.status == 302
   end
 end
