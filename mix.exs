@@ -60,7 +60,8 @@ defmodule Shopifex.MixProject do
       {:ex_doc, "~> 0.14", only: :dev, runtime: false},
       {:react_phoenix, "~> 1.2"},
       {:guardian, "~> 2.0"},
-      {:neuron, "~> 5.0.0"}
+      {:neuron, "~> 5.0.0"},
+      {:cors_plug, "~> 2.0"}
     ]
   end
 

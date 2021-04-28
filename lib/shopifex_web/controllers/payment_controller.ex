@@ -65,7 +65,12 @@ defmodule ShopifexWeb.PaymentController do
           Application.get_env(:shopifex, :redirect_after_agent, Shopifex.RedirectAfterAgent)
 
         plan = payment_guard.get_plan(plan_id)
-        shop = conn.private.shop
+
+        shop =
+          case conn.private do
+            %{shop: shop} -> shop
+            %{guardian_default_resource: shop} -> shop
+          end
 
         {:ok, charge} = create_charge(shop, plan)
 
@@ -97,7 +102,7 @@ defmodule ShopifexWeb.PaymentController do
                  name: plan.name,
                  price: plan.price,
                  test: plan.test,
-                 return_url: "#{redirect_uri}?plan_id=#{plan.id}"
+                 return_url: "#{redirect_uri}?plan_id=#{plan.id}&shop=#{shop.url}"
                },
                url: "https://#{shop.url}/admin/api/2021-04/graphql.json",
                headers: [
@@ -125,7 +130,7 @@ defmodule ShopifexWeb.PaymentController do
               name: plan.name,
               price: plan.price,
               test: plan.test,
-              return_url: "#{redirect_uri}?plan_id=#{plan.id}"
+              return_url: "#{redirect_uri}?plan_id=#{plan.id}&shop=#{shop.url}"
             }
           })
 
@@ -149,7 +154,7 @@ defmodule ShopifexWeb.PaymentController do
               name: plan.name,
               price: plan.price,
               test: plan.test,
-              return_url: "#{redirect_uri}?plan_id=#{plan.id}"
+              return_url: "#{redirect_uri}?plan_id=#{plan.id}&shop=#{shop.url}"
             }
           })
 
@@ -166,7 +171,8 @@ defmodule ShopifexWeb.PaymentController do
 
       def complete_payment(conn, %{
             "charge_id" => charge_id,
-            "plan_id" => plan_id
+            "plan_id" => plan_id,
+            "shop" => shop_url
           }) do
         redirect_after_agent =
           Application.get_env(:shopifex, :redirect_after_agent, Shopifex.RedirectAfterAgent)
@@ -178,9 +184,7 @@ defmodule ShopifexWeb.PaymentController do
         with redirect_after when redirect_after != nil <-
                redirect_after_agent.get(charge_id),
              redirect_after <- URI.decode_www_form(redirect_after),
-             %URI{query: query} <- URI.parse(redirect_after),
-             %{"token" => token} <- URI.decode_query(query),
-             {:ok, shop, _claims} <- Shopifex.Guardian.resource_from_token(token) do
+             shop when not is_nil(shop) <- Shopifex.Shops.get_shop_by_url(shop_url) do
           payment_guard = Application.fetch_env!(:shopifex, :payment_guard)
 
           plan = payment_guard.get_plan(plan_id)
