@@ -29,6 +29,21 @@ defmodule ShopifexWeb.Routes do
         plug(Shopifex.Plug.FetchFlash)
         plug(Shopifex.Plug.LoadInIframe)
       end
+
+      pipeline :shopify_api do
+        plug(CORSPlug, origin: "*")
+        plug(:accepts, ["json"])
+
+        plug(
+          Guardian.Plug.Pipeline,
+          module: Shopifex.Guardian,
+          error_handler: ShopifexWeb.AuthErrorHandler
+        )
+
+        plug(Guardian.Plug.VerifyHeader)
+        plug(Guardian.Plug.EnsureAuthenticated)
+        plug(Guardian.Plug.LoadResource)
+      end
     end
   end
 
@@ -64,6 +79,15 @@ defmodule ShopifexWeb.Routes do
       scope "/payment", unquote(app_web_module) do
         pipe_through([:shopify_browser])
         get("/complete", PaymentController, :complete_payment)
+      end
+
+      scope "/payment", unquote(app_web_module) do
+        pipe_through([:shopify_api])
+
+        scope "/api" do
+          options("/select-plan", PaymentController, :select_plan)
+          post("/select-plan", PaymentController, :select_plan)
+        end
       end
     end
   end

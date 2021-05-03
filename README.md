@@ -2,9 +2,7 @@
 
 A simple boilerplate package for creating Shopify embedded apps with the Elixir Phoenix framework. [https://hexdocs.pm/shopifex](https://hexdocs.pm/shopifex)
 
-For from-scratch setup instructions (slightly out of date), read [Create an Elixir Phoenix Shopify App in 5 Minutes](https://medium.com/@ericdude4/create-an-elixir-phoenix-shopify-app-in-5-minutes-ca308bc42216)
-
-## Notice: Shopify changed their HMAC calculation witout warning. If your admin links no longer work, upgrade to `:shopifex ~> 0.5.2`
+For from-scratch setup instructions (out of date, refer to this Readme for Shopifex setup), read [Create an Elixir Phoenix Shopify App in 5 Minutes](https://medium.com/@ericdude4/create-an-elixir-phoenix-shopify-app-in-5-minutes-ca308bc42216)
 
 ## Installation
 
@@ -14,7 +12,7 @@ by adding `shopifex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:shopifex, "~> 0.5"}
+    {:shopifex, "~> 0.6"}
   ]
 end
 ```
@@ -46,14 +44,6 @@ config :shopifex,
 Update your `endpoint.ex` to include the custom body parser. This is necessary for HMAC validation to work.
 
 ```elixir
-@session_options [
-  store: :cookie,
-  key: "_my_app_key",
-  signing_salt: "Es1PzgRs",
-  secure: true, # <- add this
-  extra: "SameSite=None" # <- add this
-]
-# ...
 plug Plug.Parsers,
   parsers: [:urlencoded, :multipart, :json],
   pass: ["*/*"],
@@ -68,18 +58,21 @@ ShopifexWeb.Routes.pipelines()
 ```
 Now the following pipelines are accessible:
 
-- `:shopify_browser` -> Calls custom Shopifex fetch_flash amd removes iframe blocking headers as well as standard :browser pipeline stuff
-- `:shopify_session` -> Ensures that a valid store is currently loaded in the session and is accessible in your controllers/templates as `conn.private.shop`. Also places a JWT in the session which can be accessed via `Guardian.Plug.current_token/1` and passed to your front end for making authorized requests.
-- `:shopify_webhook` -> Validates webhook request HMAC and makes shop accessible in your controllers/templates as `conn.private.shop`
-- `:admin_links` -> fetches flash and removes iframe headers. Useful for admin link endpoints
+- `:shopify_browser` -> Calls custom Shopifex fetch_flash amd removes iframe blocking headers as well as standard `:browser` router pipeline.
+- `:shopify_session` -> Ensures that a valid store is in the session and is accessible in your controllers/templates as `conn.private.shop`. Determines current store based on Shopifex JWT or Shopify session token found in a `token` parameter or `Authorization` header. Places a Shopifex JWT in the `conn` which can be accessed via `Guardian.Plug.current_token/1`.
+- `:shopify_webhook` -> Validates webhook request HMAC and makes shop accessible in your controllers/templates as `conn.private.shop`.
+- `:admin_links` -> Fetches flash and removes iframe headers. Useful for admin link endpoints.
+- `:shopify_api` -> Ensures that a valid Shopify session token or Shopifex token are present in `Authorization` header.
 
 Now add this basic example of these plugs in action in `router.ex`. These endpoints need to be added to your Shopify app whitelist
 
+### Routing
 ```elixir
 # Include all auth (when Shopify requests to render your app in an iframe), installation and update routes 
 ShopifexWeb.Routes.auth_routes(MyAppWeb)
 
-# Place your in-shopify-session endpoints in here
+# Endpoints accessible within the Shopify admin panel iFrame.
+# Don't include this scope block if you are creating a SPA.
 scope "/", MyAppWeb do
   pipe_through [:shopify_browser, :shopify_session]
 
@@ -118,8 +111,9 @@ defmodule MyAppWeb.AuthController do
   end
 end
 ```
+Setting up your application as a SPA? Read this before continuing [Single Page Applications](#single-page-applications)
 
-create another controller called `webhook_controller.ex` to handle incoming Shopify webhooks
+create another controller called `webhook_controller.ex` to handle incoming Shopify webhooks (optional)
 
 ```elixir
 defmodule MyAppWeb.WebhookController do
@@ -158,11 +152,11 @@ defmodule MyAppWeb.WebhookController do
   end
 end
 ```
-## Maintaining session between page loads
+## Maintaining session between page loads for server-rendered applications
 As browsers continue to restrict cookies, cookies become more unreliable as a method for maintaining a session within an iFrame. To address this, Shopify recommends passing a JWT session token back and forth between requests.
 
 Shopifex makes a token accessible with `Guardian.Plug.current_token(conn)` in any controller which is behind the `:shopify_session` router pipeline.
-### Multi-page Applications
+
 Ensure there is a `token` parameter sent along in any requests which you would like to maintain session between.
 
 EEx template link:
@@ -176,48 +170,7 @@ EEx template form:
   <%= submit "Submit" %>
 <% end %>
 ```
-### Single-page Applications
-Add `{:guardian, "~> 2.0"}` as a dependency in `mix.exs`.
 
-Create another pipeline in `router.ex`:
-```elixir
-pipeline :authorized do
-  plug(
-    Guardian.Plug.Pipeline,
-    module: Shopifex.Guardian,
-    error_handler: ShopifyAppWeb.AuthErrorHandler
-  )
-
-  plug Guardian.Plug.VerifyHeader
-  plug Guardian.Plug.EnsureAuthenticated
-  plug Guardian.Plug.LoadResource
-end
-
-scope "/product", ShopifyAppWeb do
-  pipe_through [:api, :authorized]
-
-  get "/", ProductController, :index
-end
-```
-
-Pass the session token to your front end by adding it in the head of your template `app.html.eex`:
-```html
-<head>
-  ...
-  <script>
-    window.sessionToken = <%= Guardian.Plug.current_token(conn) %>;
-  </script>
-</head>
-```
-
-Then use it in your async requests:
-```javascript
-const result = await fetch(`/products`, {
-    headers: {
-      Authorization: `Bearer ${window.sessionToken}`,
-    },
-  });
-```
 ## Update app permissions
 
 You can also update the app permissions after installation. To do so, first you have to add `your-redirect-url.com/auth/update` to Shopify's whitelist.
@@ -228,7 +181,7 @@ To add e.g. the `read_customers` scope, you can do so by redirecting them to the
 https://{shop-name}.myshopify.com/admin/oauth/request_grant?client_id=API_KEY&redirect_uri={YOUR_REINSTALL_URL}/auth/update&scope={YOUR_SCOPES},read_customers
 ```
 
-## Beta feature: Add payment guards to routes
+## Add payment guards to routes
 This system allows you to use the `Shopifex.Plug.PaymentGuard` plug. If the merchant does not have an active grant associated with the named guard, it will redirect them to a plan selection page, allow them to pay, and handle the payment callback all automatically. I am working on the admin panel where you can register Plan objects which grant `premium_plan` (for example) - but for now these need to be entered manually into the database.
 
 Generate the schemas
@@ -288,4 +241,58 @@ defmodule MyAppWeb.AdminLinkController do
     |> send_resp(200, "success")
   end
 end
+```
+### Single Page Applications
+SPA Shopify applications are also supported with Shopifex for developers who wish to host their front-end application separately from the back-end. This approach takes advantage of [Shopify session tokens](https://shopify.dev/concepts/apps/building-embedded-apps-using-session-tokens).
+
+Adjust your `router.ex` file. You may notice some routes are no longer necessary compared to the quick-start guide.
+```elixir
+ShopifexWeb.Routes.pipelines()
+
+# These routes will take care of installation/update
+ShopifexWeb.Routes.auth_routes(ShopifyAppWeb)
+
+# API routes for your SPA to hit with the axios instance
+scope "/api", MyAppWeb do
+  pipe_through [:shopify_api]
+  
+  # An endpoint which your SPA can call on load to get whatever initialization data your app needs.
+  # The options macro is required to allow CORS requests on the route.
+  options "/initialize", AuthController, :initialize
+  get "/initialize", AuthController, :initialize
+  
+  # Add authenticated routes here as needed.
+end
+```
+And for that `/initialize` endpoint, consider this adjustment to `MyAppWeb.AuthController` and update based on your needs. Perhaps you also want to serialize and return some more information needed by your SPA at startup.
+```elixir
+defmodule MyAppWeb.AuthController do
+  use MyAppWeb, :controller
+  use ShopifexWeb.AuthController
+  
+  def initialize(conn, _params) do
+    shop = Guardian.Plug.current_resource(conn)
+    
+    render(conn, "initialize.json", %{shop: shop})
+  end
+end
+```
+Now, [integrate Shopify session tokens into the Axios instance of your SPA.](https://shopify.dev/tutorials/use-session-tokens-with-axios)
+Then from your SPA:
+```javascript
+import createApp from '@shopify/app-bridge';
+// Import your Shopify session_token axios instance based on the Shopify session token axios instructions
+import instance from './axios-instance';
+
+const urlParams = new URLSearchParams(window.location.search);
+const shopOrigin = urlParams.get('shop');
+
+window.app = createApp({
+  apiKey: "MY_SHOPIFY_API_KEY",
+  shopOrigin,
+});
+
+// Use your axios instance to call the /api/initialize endpoint
+const sessionData = await instance.get('/api/initialize');
+// Now you will have access to the current shop and Bob's-yer-uncle!
 ```
