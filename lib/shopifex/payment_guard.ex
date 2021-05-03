@@ -11,26 +11,38 @@ defmodule Shopifex.PaymentGuard do
           test: boolean()
         }
 
+  @type grant :: %{
+          charge_id: pos_integer(),
+          grants: [String.t()],
+          remaining_usages: pos_integer(),
+          total_usages: pos_integer()
+        }
+
+  @type shop :: %{access_token: String.t(), scope: String.t(), url: String.t()}
+
+  @type guard :: String.t()
+
   @doc """
-  Returns a payment record which grants access to the payment guard. Filters
-  where `remaining_usages` is greater than 0 or has a nil value (unlimited usage).
+  Returns a payment record which grants access to the payment guard.
+  Default behaviour filters where `remaining_usages` is greater than
+  0 or has a nil value (unlimited usage).
   """
-  @callback grant_for_guard(Ecto.Schema.t(), Ecto.Schema.t()) :: Ecto.Schema.t()
+  @callback grant_for_guard(shop(), guard()) :: grant() | boolean()
 
   @doc """
   Updates the grant to reflect the usage of it in some way. Defaults to decrementing
   the `remaining_usages` property if it's not nil. If it is nil, the grant has
   unlimited usages
   """
-  @callback use_grant(Ecto.Schema.t(), Ecto.Schema.t()) :: Ecto.Schema.t()
+  @callback use_grant(shop(), grant()) :: grant()
 
   @doc """
   After payment has been accepted, this function is meant to persist the
   payment. Default behaviour is to create a grant schema record. `charge_id` is
   the external id for the Shopify charge record.
   """
-  @callback create_grant(shop :: Ecto.Schema.t(), plan :: plan(), charge_id :: pos_integer()) ::
-              {:ok, map()}
+  @callback create_grant(shop :: shop(), plan :: plan(), charge_id :: pos_integer()) ::
+              {:ok, any()}
 
   @doc """
   Gets a plan with a given identifier
