@@ -66,12 +66,13 @@ Now the following pipelines are accessible:
 
 Now add this basic example of these plugs in action in `router.ex`. These endpoints need to be added to your Shopify app whitelist
 
-### Server-rendered application
+### Routing
 ```elixir
 # Include all auth (when Shopify requests to render your app in an iframe), installation and update routes 
 ShopifexWeb.Routes.auth_routes(MyAppWeb)
 
-# Endpoints accessible within the Shopify admin panel iFrame
+# Endpoints accessible within the Shopify admin panel iFrame.
+# Don't include this scope block if you are creating a SPA.
 scope "/", MyAppWeb do
   pipe_through [:shopify_browser, :shopify_session]
 
@@ -110,6 +111,7 @@ defmodule MyAppWeb.AuthController do
   end
 end
 ```
+Setting up your application as a SPA? Read this before continuing [Single Page Applications](#single-page-applications)
 
 create another controller called `webhook_controller.ex` to handle incoming Shopify webhooks (optional)
 
@@ -150,11 +152,11 @@ defmodule MyAppWeb.WebhookController do
   end
 end
 ```
-## Maintaining session between page loads
+## Maintaining session between page loads for server-rendered applications
 As browsers continue to restrict cookies, cookies become more unreliable as a method for maintaining a session within an iFrame. To address this, Shopify recommends passing a JWT session token back and forth between requests.
 
 Shopifex makes a token accessible with `Guardian.Plug.current_token(conn)` in any controller which is behind the `:shopify_session` router pipeline.
-### Server-rendered Applications
+
 Ensure there is a `token` parameter sent along in any requests which you would like to maintain session between.
 
 EEx template link:
