@@ -24,8 +24,6 @@ defmodule Shopifex.Plug.ShopifySession do
 
   defp get_token_from_conn(%Plug.Conn{params: %{"token" => token}}), do: token
 
-  defp get_token_from_conn(%Plug.Conn{params: %{"hidden_input" => %{"token" => token}}}), do: token
-
   defp get_token_from_conn(_), do: nil
 
   defp get_locale(%Plug.Conn{params: %{"locale" => locale}}, _token_claims), do: locale
