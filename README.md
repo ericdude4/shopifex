@@ -165,8 +165,7 @@ EEx template link:
 ```
 EEx template form:
 ```elixir
-<%= form_for :foo, Routes.foo_path(MyApp.Endpoint, :new), fn f -> %>
-  <%= hidden_input, f, :token, value: Guardian.Plug.current_token(conn) %>
+<%= form_for :foo, Routes.foo_path(MyApp.Endpoint, :new, %{token: Guardian.Plug.current_token(@conn)}), fn f -> %>
   <%= submit "Submit" %>
 <% end %>
 ```
