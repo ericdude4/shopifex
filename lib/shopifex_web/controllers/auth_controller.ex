@@ -39,11 +39,11 @@ defmodule ShopifexWeb.AuthController do
   ## Example
 
       @impl true
-      def insert_shop(conn) do
+      def insert_shop(shop) do
         # make sure there is only one store in the database because we don't have
         # a unique index on the url column for some reason.
 
-        case Shopifex.Shops.get_shop_by_url(shop_url) do
+        case Shopifex.Shops.get_shop_by_url(shop.url) do
           nil -> super(shop)
           shop -> shop
         end
@@ -51,7 +51,17 @@ defmodule ShopifexWeb.AuthController do
   """
   @callback insert_shop(shop()) :: shop()
 
-  @optional_callbacks after_install: 2, insert_shop: 1
+  @doc """
+  An optional callback which you can use to override how your app is rendered on
+  initial load. If you are building a server-rendered app, you might just want
+  to redirect to your index page. If you are building an externally hosted SPA,
+  you probably want to redirect to the Shopify admin link for your app.
+
+  Externally hosted SPA's will likely only hit this route on install.
+  """
+  @callback auth(conn :: Plug.Conn.t(), params :: Plug.Conn.params()) :: Plug.Conn.t()
+
+  @optional_callbacks after_install: 2, insert_shop: 1, auth: 2
 
   defmacro __using__(_opts) do
     quote do
@@ -59,6 +69,7 @@ defmodule ShopifexWeb.AuthController do
 
       require Logger
 
+      @impl ShopifexWeb.AuthController
       def auth(conn, _) do
         path_prefix = Application.get_env(:shopifex, :path_prefix, "")
 
@@ -182,7 +193,7 @@ defmodule ShopifexWeb.AuthController do
         end
       end
 
-      defoverridable after_install: 2, insert_shop: 1
+      defoverridable after_install: 2, insert_shop: 1, auth: 2
     end
   end
 end
