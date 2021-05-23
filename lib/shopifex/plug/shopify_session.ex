@@ -65,7 +65,11 @@ defmodule Shopifex.Plug.ShopifySession do
     end
   end
 
-  defp initiate_new_session(conn), do: respond_invalid(conn)
+  defp initiate_new_session(conn) do
+    conn
+    |> Plug.Conn.delete_session(:shop_id)
+    |> respond_invalid()
+  end
 
   defp do_new_session(conn = %{params: %{"shop" => shop_url} = params}) do
     case Shopifex.Shops.get_shop_by_url(shop_url) do
@@ -109,6 +113,7 @@ defmodule Shopifex.Plug.ShopifySession do
     |> Plug.Conn.put_private(:shop_url, shop.url)
     |> Plug.Conn.put_private(:shop, shop)
     |> Plug.Conn.put_private(:locale, locale)
+    |> Plug.Conn.put_session(:shop_id, shop.id)
   end
 
   defp respond_invalid(conn) do
