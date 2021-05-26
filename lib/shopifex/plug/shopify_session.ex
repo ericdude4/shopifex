@@ -104,7 +104,7 @@ defmodule Shopifex.Plug.ShopifySession do
   end
 
   def put_shop_in_session(conn, shop, host, locale \\ "en") do
-    Gettext.put_locale(locale)
+    Gettext.put_locale(locale || "en")
 
     # Create a new token right away for the next request
     {:ok, token, claims} =
