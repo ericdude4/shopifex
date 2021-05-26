@@ -79,7 +79,9 @@ defmodule Shopifex.Plug.ShopifyWebhook do
         |> Shopifex.Shops.get_shop_by_url()
 
       if shop do
-        Shopifex.Plug.ShopifySession.put_shop_in_session(conn, shop)
+        host = Map.get(conn.params, "host")
+        locale = Map.get(conn.params, "locale")
+        Shopifex.Plug.ShopifySession.put_shop_in_session(conn, shop, host, locale)
       else
         conn
         |> send_resp(404, "no store found with url")
