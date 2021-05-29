@@ -12,7 +12,9 @@ defmodule Shopifex.Plug.PaymentGuard do
   def call(conn, guard_identifier) do
     payment_guard = Application.fetch_env!(:shopifex, :payment_guard)
 
-    case payment_guard.grant_for_guard(conn.private.shop, guard_identifier) do
+    shop = Shopifex.Plug.current_shop(conn)
+
+    case payment_guard.grant_for_guard(shop, guard_identifier) do
       nil ->
         Logger.info("Payment guard blocked request")
         redirect_after = URI.encode_www_form("#{conn.request_path}?#{conn.query_string}")
@@ -21,7 +23,7 @@ defmodule Shopifex.Plug.PaymentGuard do
         |> Plug.Conn.halt()
 
       grant_for_guard ->
-        grant_for_guard = payment_guard.use_grant(conn.private.shop, grant_for_guard)
+        grant_for_guard = payment_guard.use_grant(shop, grant_for_guard)
         Plug.Conn.put_private(conn, :grant_for_guard, grant_for_guard)
     end
   end
