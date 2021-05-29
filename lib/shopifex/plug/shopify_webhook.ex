@@ -12,8 +12,8 @@ defmodule Shopifex.Plug.ShopifyWebhook do
   end
 
   def call(conn, _) do
-    expected_hmac = build_hmac(conn)
-    received_hmac = get_hmac(conn)
+    expected_hmac = Shopifex.Plug.build_hmac(conn)
+    received_hmac = Shopifex.Plug.get_hmac(conn)
 
     if expected_hmac == received_hmac do
       shop =
@@ -36,57 +36,6 @@ defmodule Shopifex.Plug.ShopifyWebhook do
       conn
       |> send_resp(401, "invalid hmac signature")
       |> halt()
-    end
-  end
-
-  defp build_hmac(%Plug.Conn{method: "GET"} = conn) do
-    query_string =
-      conn.query_params
-      |> Enum.map(fn
-        {"hmac", _value} ->
-          nil
-
-        {"ids", value} ->
-          # This absolutely rediculous solution: https://community.shopify.com/c/Shopify-Apps/Hmac-Verification-for-Bulk-Actions/m-p/590611#M18504
-          ids =
-            Enum.map(value, fn id ->
-              "\"#{id}\""
-            end)
-            |> Enum.join(", ")
-
-          "ids=[#{ids}]"
-
-        {key, value} ->
-          "#{key}=#{value}"
-      end)
-      |> Enum.filter(&(!is_nil(&1)))
-      |> Enum.join("&")
-
-    :crypto.hmac(
-      :sha256,
-      Application.fetch_env!(:shopifex, :secret),
-      query_string
-    )
-    |> Base.encode16()
-    |> String.downcase()
-  end
-
-  defp build_hmac(%Plug.Conn{method: "POST"} = conn) do
-    :crypto.hmac(
-      :sha256,
-      Application.fetch_env!(:shopifex, :secret),
-      conn.assigns[:raw_body]
-    )
-    |> Base.encode64()
-  end
-
-  defp get_hmac(%Plug.Conn{params: %{"hmac" => hmac}}), do: hmac
-
-  defp get_hmac(%Plug.Conn{} = conn) do
-    with [hmac_header] <- Plug.Conn.get_req_header(conn, "x-shopify-hmac-sha256") do
-      hmac_header
-    else
-      _ -> nil
     end
   end
 

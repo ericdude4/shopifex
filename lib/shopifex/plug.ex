@@ -75,4 +75,58 @@ defmodule Shopifex.Plug do
     |> Guardian.Plug.put_current_token(token)
     |> Plug.Conn.put_private(:shopifex, shopifex_private_data)
   end
+
+  @spec build_hmac(conn :: Plug.Conn.t()) :: String.t()
+  def build_hmac(%Plug.Conn{method: "GET"} = conn) do
+    query_string =
+      conn.query_params
+      |> Enum.map(fn
+        {"hmac", _value} ->
+          nil
+
+        {"ids", value} ->
+          # This absolutely rediculous solution: https://community.shopify.com/c/Shopify-Apps/Hmac-Verification-for-Bulk-Actions/m-p/590611#M18504
+          ids =
+            Enum.map(value, fn id ->
+              "\"#{id}\""
+            end)
+            |> Enum.join(", ")
+
+          "ids=[#{ids}]"
+
+        {key, value} ->
+          "#{key}=#{value}"
+      end)
+      |> Enum.filter(&(!is_nil(&1)))
+      |> Enum.join("&")
+
+    :crypto.hmac(
+      :sha256,
+      Application.fetch_env!(:shopifex, :secret),
+      query_string
+    )
+    |> Base.encode16()
+    |> String.downcase()
+  end
+
+  def build_hmac(%Plug.Conn{method: "POST"} = conn) do
+    :crypto.hmac(
+      :sha256,
+      Application.fetch_env!(:shopifex, :secret),
+      conn.assigns[:raw_body]
+    )
+    |> Base.encode64()
+    |> String.downcase()
+  end
+
+  @spec get_hmac(conn :: Plug.Conn.t()) :: String.t() | nil
+  def get_hmac(%Plug.Conn{params: %{"hmac" => hmac}}), do: String.downcase(hmac)
+
+  def get_hmac(%Plug.Conn{} = conn) do
+    with [hmac_header] <- Plug.Conn.get_req_header(conn, "x-shopify-hmac-sha256") do
+      String.downcase(hmac_header)
+    else
+      _ -> nil
+    end
+  end
 end
