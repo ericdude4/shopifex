@@ -1,4 +1,8 @@
 defmodule Shopifex.Plug.ShopifyWebhook do
+  @moduledoc """
+  Ensures that the connection has a valid Shopify webhook HMAC token and
+  builds Shopifex session.
+  """
   import Plug.Conn
   require Logger
 
@@ -7,75 +11,14 @@ defmodule Shopifex.Plug.ShopifyWebhook do
     options
   end
 
-  @doc """
-  Ensures that the connection has a valid Shopify webhook HMAC token and puts the shop in conn.private
-  """
   def call(conn, _) do
-    {their_hmac, our_hmac} =
-      case conn.method do
-        "GET" ->
-          query_string =
-            conn.query_params
-            |> Enum.map(fn
-              {"hmac", _value} ->
-                nil
+    expected_hmac = build_hmac(conn)
+    received_hmac = get_hmac(conn)
 
-              {"ids", value} ->
-                # This absolutely rediculous solution: https://community.shopify.com/c/Shopify-Apps/Hmac-Verification-for-Bulk-Actions/m-p/590611#M18504
-                ids =
-                  Enum.map(value, fn id ->
-                    "\"#{id}\""
-                  end)
-                  |> Enum.join(", ")
-
-                "ids=[#{ids}]"
-
-              {key, value} ->
-                "#{key}=#{value}"
-            end)
-            |> Enum.filter(&(!is_nil(&1)))
-            |> Enum.join("&")
-
-          {
-            conn.params["hmac"],
-            :crypto.hmac(
-              :sha256,
-              Application.fetch_env!(:shopifex, :secret),
-              query_string
-            )
-            |> Base.encode16()
-            |> String.downcase()
-          }
-
-        "POST" ->
-          case Plug.Conn.get_req_header(conn, "x-shopify-hmac-sha256") do
-            [header_hmac] ->
-              our_hmac =
-                :crypto.hmac(
-                  :sha256,
-                  Application.fetch_env!(:shopifex, :secret),
-                  conn.assigns[:raw_body]
-                )
-                |> Base.encode64()
-
-              {header_hmac, our_hmac}
-
-            [] ->
-              conn
-              |> send_resp(401, "missing hmac signature")
-              |> halt()
-          end
-      end
-
-    if our_hmac == their_hmac do
+    if expected_hmac == received_hmac do
       shop =
-        case Plug.Conn.get_req_header(conn, "x-shopify-shop-domain") do
-          [shop_url] ->
-            shop_url
-
-          _ ->
-            conn.params["myshopify_domain"] || conn.query_params["shop"]
-        end
+        conn
+        |> get_shop_domain()
         |> Shopifex.Shops.get_shop_by_url()
 
       if shop do
@@ -88,11 +31,73 @@ defmodule Shopifex.Plug.ShopifyWebhook do
         |> halt()
       end
     else
-      Logger.info("HMAC doesn't match " <> our_hmac)
+      Logger.info("HMAC doesn't match " <> expected_hmac)
 
       conn
       |> send_resp(401, "invalid hmac signature")
       |> halt()
+    end
+  end
+
+  defp build_hmac(%Plug.Conn{method: "GET"} = conn) do
+    query_string =
+      conn.query_params
+      |> Enum.map(fn
+        {"hmac", _value} ->
+          nil
+
+        {"ids", value} ->
+          # This absolutely rediculous solution: https://community.shopify.com/c/Shopify-Apps/Hmac-Verification-for-Bulk-Actions/m-p/590611#M18504
+          ids =
+            Enum.map(value, fn id ->
+              "\"#{id}\""
+            end)
+            |> Enum.join(", ")
+
+          "ids=[#{ids}]"
+
+        {key, value} ->
+          "#{key}=#{value}"
+      end)
+      |> Enum.filter(&(!is_nil(&1)))
+      |> Enum.join("&")
+
+    :crypto.hmac(
+      :sha256,
+      Application.fetch_env!(:shopifex, :secret),
+      query_string
+    )
+    |> Base.encode16()
+    |> String.downcase()
+  end
+
+  defp build_hmac(%Plug.Conn{method: "POST"} = conn) do
+    :crypto.hmac(
+      :sha256,
+      Application.fetch_env!(:shopifex, :secret),
+      conn.assigns[:raw_body]
+    )
+    |> Base.encode64()
+  end
+
+  defp get_hmac(%Plug.Conn{params: %{"hmac" => hmac}}), do: hmac
+
+  defp get_hmac(%Plug.Conn{} = conn) do
+    with [hmac_header] <- Plug.Conn.get_req_header(conn, "x-shopify-hmac-sha256") do
+      hmac_header
+    else
+      _ -> nil
+    end
+  end
+
+  defp get_shop_domain(%Plug.Conn{params: %{"myshopify_domain" => shop_url}}), do: shop_url
+  defp get_shop_domain(%Plug.Conn{params: %{"shop" => shop_url}}), do: shop_url
+
+  defp get_shop_domain(%Plug.Conn{} = conn) do
+    with [shop_url] <- Plug.Conn.get_req_header(conn, "x-shopify-shop-domain") do
+      shop_url
+    else
+      _ -> nil
     end
   end
 end
