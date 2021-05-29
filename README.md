@@ -58,11 +58,11 @@ ShopifexWeb.Routes.pipelines()
 ```
 Now the following pipelines are accessible:
 
-- `:shopify_browser` -> Calls custom Shopifex fetch_flash amd removes iframe blocking headers as well as standard `:browser` router pipeline.
-- `:shopify_session` -> Ensures that a valid store is in the session and is accessible in your controllers/templates as `conn.private.shop`. Determines current store based on Shopifex JWT or Shopify session token found in a `token` parameter or `Authorization` header. Places a Shopifex JWT in the `conn` which can be accessed via `Guardian.Plug.current_token/1`.
-- `:shopify_webhook` -> Validates webhook request HMAC and makes shop accessible in your controllers/templates as `conn.private.shop`.
-- `:admin_links` -> Fetches flash and removes iframe headers. Useful for admin link endpoints.
-- `:shopify_api` -> Ensures that a valid Shopify session token or Shopifex token are present in `Authorization` header.
+- `:shopify_session` -> Validates request (HMAC header/param or token param) and makes session information available via `Shopifex.Plug` API. Also removes iFrame blocking headers so app can render in Shopify admin.
+- `:shopify_webhook` -> Validates Shopify webhook requests HMAC and makes session information available via `Shopifex.Plug` API.
+- `:shopify_admin_link` -> Validates Shopify admin link & bulk action link requests and makes session information available via `Shopifex.Plug` API.
+- `:shopify_api` -> Ensures that a valid Shopify session token or Shopifex token are present in `Authorization` header. Useful for async requests between your SPA front end and Shopifex backend.
+- `:shopifex_browser` -> Same as your normal `:browser` pipeline, except it calls `Shopifex.Plug.LoadInIframe`.
 
 Now add this basic example of these plugs in action in `router.ex`. These endpoints need to be added to your Shopify app whitelist
 
@@ -74,7 +74,7 @@ ShopifexWeb.Routes.auth_routes(MyAppWeb)
 # Endpoints accessible within the Shopify admin panel iFrame.
 # Don't include this scope block if you are creating a SPA.
 scope "/", MyAppWeb do
-  pipe_through [:shopify_browser, :shopify_session]
+  pipe_through [:shopifex_browser, :shopify_session]
 
   get "/", PageController, :index
 end
@@ -155,17 +155,17 @@ end
 ## Maintaining session between page loads for server-rendered applications
 As browsers continue to restrict cookies, cookies become more unreliable as a method for maintaining a session within an iFrame. To address this, Shopify recommends passing a JWT session token back and forth between requests.
 
-Shopifex makes a token accessible with `Guardian.Plug.current_token(conn)` in any controller which is behind the `:shopify_session` router pipeline.
+Shopifex makes a token accessible with `Shopifex.Plug.session_token(conn)` in any request which passes through a `:shopify_*` router pipeline.
 
 Ensure there is a `token` parameter sent along in any requests which you would like to maintain session between.
 
 EEx template link:
 ```elixir
-<%= link "home", to: Routes.page_path(@conn, :index, %{token: Guardian.Plug.current_token(conn)}) %>
+<%= link "home", to: Routes.page_path(@conn, :index, %{token: Shopifex.Plug.session_token(conn)}) %>
 ```
 EEx template form:
 ```elixir
-<%= form_for :foo, Routes.foo_path(MyApp.Endpoint, :new, %{token: Guardian.Plug.current_token(@conn)}), fn f -> %>
+<%= form_for :foo, Routes.foo_path(MyApp.Endpoint, :new, %{token: Shopifex.Plug.session_token(@conn)}), fn f -> %>
   <%= submit "Submit" %>
 <% end %>
 ```
