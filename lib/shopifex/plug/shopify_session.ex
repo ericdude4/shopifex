@@ -24,7 +24,9 @@ defmodule Shopifex.Plug.ShopifySession do
 
   defp get_token_from_conn(%Plug.Conn{params: %{"token" => token}}), do: token
 
-  defp get_token_from_conn(_), do: nil
+  defp get_token_from_conn(conn) do
+    get_session(conn, :token)
+  end
 
   defp get_locale(%Plug.Conn{params: %{"locale" => locale}}, _token_claims), do: locale
 
@@ -67,7 +69,8 @@ defmodule Shopifex.Plug.ShopifySession do
 
   defp initiate_new_session(conn) do
     conn
-    |> Plug.Conn.delete_session(:shop_id)
+    |> Plug.Conn.delete_session(:token)
+    |> Plug.Conn.delete_session(:current_shop_id)
     |> respond_invalid()
   end
 
@@ -113,7 +116,8 @@ defmodule Shopifex.Plug.ShopifySession do
     |> Plug.Conn.put_private(:shop_url, shop.url)
     |> Plug.Conn.put_private(:shop, shop)
     |> Plug.Conn.put_private(:locale, locale)
-    |> Plug.Conn.put_session(:shop_id, shop.id)
+    |> Plug.Conn.put_session(:token, token)
+    |> Plug.Conn.put_session(:current_shop_id, shop.id)
   end
 
   defp respond_invalid(conn) do
