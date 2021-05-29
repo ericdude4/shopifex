@@ -13,7 +13,7 @@ defmodule ShopifexWeb.Routes do
         plug(Shopifex.Plug.ShopifySession)
       end
 
-      pipeline :validate_hmac do
+      pipeline :validate_install_hmac do
         plug(Shopifex.Plug.ValidateHmac)
       end
 
@@ -23,11 +23,12 @@ defmodule ShopifexWeb.Routes do
         plug(Shopifex.Plug.ShopifyWebhook)
       end
 
-      pipeline :admin_links do
+      pipeline :shopify_admin_link do
         plug(:accepts, ["json"])
         plug(:fetch_session)
         plug(Shopifex.Plug.FetchFlash)
         plug(Shopifex.Plug.LoadInIframe)
+        plug(Shopifex.Plug.ShopifyWebhook)
       end
 
       pipeline :shopify_api do
@@ -55,7 +56,7 @@ defmodule ShopifexWeb.Routes do
       end
 
       scope "/auth", unquote(app_web_module) do
-        pipe_through([:shopify_browser, :validate_hmac])
+        pipe_through([:shopify_browser, :validate_install_hmac])
         get("/install", AuthController, :install)
         get("/update", AuthController, :update)
       end

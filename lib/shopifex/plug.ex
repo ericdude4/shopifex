@@ -8,7 +8,7 @@ defmodule Shopifex.Plug do
   @doc """
   Get current request shop resource for give `conn`.
 
-  Available in all requests which have passed through a `:shopifex_*` pipeline.
+  Available in all requests which have passed through a `:shopify_*` pipeline.
 
   ## Examples:
 
@@ -40,8 +40,7 @@ defmodule Shopifex.Plug do
 
   @doc """
   Returns the token for the current session in a plug which has
-  passed through the `:shopify_session` pipeline, or the
-  `Shopifex.Plug.ShopifySession` plug.
+  passed through a `:shopify_*` pipeline.
 
   ## Example
       iex> session_token(conn)
