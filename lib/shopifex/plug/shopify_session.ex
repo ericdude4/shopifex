@@ -14,8 +14,9 @@ defmodule Shopifex.Plug.ShopifySession do
     case Shopifex.Guardian.resource_from_token(token) do
       {:ok, shop, claims} ->
         locale = get_locale(conn, claims)
+        host = get_host(conn, claims)
 
-        put_shop_in_session(conn, shop, locale)
+        put_shop_in_session(conn, shop, host, locale)
 
       _ ->
         initiate_new_session(conn)
@@ -32,6 +33,11 @@ defmodule Shopifex.Plug.ShopifySession do
 
   defp get_locale(_conn, token_claims),
     do: Map.get(token_claims, "loc", Application.get_env(:shopifex, :default_locale, "en"))
+
+  defp get_host(%Plug.Conn{params: %{"host" => host}}, _token_claims), do: host
+
+  defp get_host(_conn, token_claims),
+    do: Map.get(token_claims, "host")
 
   defp initiate_new_session(conn = %{params: %{"hmac" => hmac}}) do
     hmac = String.upcase(hmac)
@@ -83,6 +89,7 @@ defmodule Shopifex.Plug.ShopifySession do
         put_shop_in_session(
           conn,
           shop,
+          Map.get(params, "host"),
           Map.get(params, "locale", Application.get_env(:shopifex, :default_locale, "en"))
         )
     end
@@ -103,11 +110,12 @@ defmodule Shopifex.Plug.ShopifySession do
     |> halt()
   end
 
-  def put_shop_in_session(conn, shop, locale \\ "en") do
-    Gettext.put_locale(locale)
+  def put_shop_in_session(conn, shop, host, locale \\ "en") do
+    Gettext.put_locale(locale || "en")
 
     # Create a new token right away for the next request
-    {:ok, token, claims} = Shopifex.Guardian.encode_and_sign(shop, %{"loc" => locale})
+    {:ok, token, claims} =
+      Shopifex.Guardian.encode_and_sign(shop, %{"loc" => locale, "host" => host})
 
     conn
     |> Guardian.Plug.put_current_resource(shop)
@@ -118,6 +126,8 @@ defmodule Shopifex.Plug.ShopifySession do
     |> Plug.Conn.put_private(:locale, locale)
     |> Plug.Conn.put_session(:token, token)
     |> Plug.Conn.put_session(:current_shop_id, shop.id)
+    # host is required by @shopify/app-bridge >= 2.0.0 in the createApp function
+    |> Plug.Conn.put_private(:shopify_host, host)
   end
 
   defp respond_invalid(conn) do

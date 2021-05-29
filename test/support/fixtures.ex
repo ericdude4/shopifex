@@ -10,7 +10,7 @@ defmodule Shopifex.Fixtures do
         access_token: "asdf1234"
       })
 
-    conn = Shopifex.Plug.ShopifySession.put_shop_in_session(conn, shop)
+    conn = Shopifex.Plug.ShopifySession.put_shop_in_session(conn, shop, "foo-host")
 
     {:ok, conn: conn, shop: shop}
   end
