@@ -4,8 +4,8 @@ defmodule Mix.Tasks.Shopifex.Gen.Migration do
   @moduledoc """
   Generates migration file.
       mix shopifex.gen.migrations -r MyApp.Repo
-      mix shopifex.gen.migrations -r MyApp.Repo --namespace oauth2
-  This generator will add the oauth2 migration file in `priv/repo/migrations`.
+      mix shopifex.gen.migrations -r MyApp.Repo --namespace shopify_app
+  This generator will add the shopifex migration file in `priv/repo/migrations`.
   The repository must be set under `:ecto_repos` in the current app
   configuration or given via the `-r` option.
   By default, the migration will be generated to the

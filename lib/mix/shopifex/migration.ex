@@ -90,41 +90,31 @@ defmodule Mix.Shopifex.Migration do
   end
   """
 
+  alias Mix.Shopifex.Shop
+
   @schemas [
-    {"shops", Shop,
-     [
-       {:url, :string, null: false},
-       {:access_token, :string, null: false},
-       {:scope, :string, null: false}
-     ],
-     [
-       #  {:belongs_to, :owner, :users},
-       #  {:has_many, :access_tokens, :access_tokens, foreign_key: :application_id}
-     ],
-     [
-        {:url, true}
-     ]}
+    {"shops", Shop}
   ]
 
   @spec gen(binary(), binary(), map()) :: binary()
   def gen(name, namespace, %{repo: repo} = config) do
     schemas =
-      for {table, module, attrs, assocs, indexes} <- @schemas,
-          do: schema(module, table, attrs, assocs, indexes, namespace, config)
+      for {table, module} <- @schemas,
+          do: schema(module, table, namespace, config)
 
     EEx.eval_string(@template, migration: %{repo: repo, name: name, schemas: schemas})
   end
 
-  defp schema(module, table, attrs, assocs, indexes, namespace, %{binary_id: binary_id}) do
+  defp schema(module, table, namespace, %{binary_id: binary_id}) do
     attrs =
-      attrs
-      |> Kernel.++(attrs_from_assocs(assocs, namespace))
+      module.attrs()
+      |> Kernel.++(attrs_from_assocs(module.assocs(), namespace))
       |> migration_attrs()
 
     defaults = defaults(attrs)
     {assocs, attrs} = partition_attrs(attrs)
     table = "#{namespace}_#{table}"
-    indexes = migration_indexes(indexes, table)
+    indexes = migration_indexes(module.indexes(), table)
 
     %{
       table: table,
@@ -136,7 +126,7 @@ defmodule Mix.Shopifex.Migration do
     }
   end
 
-  defp attrs_from_assocs(assocs, namespace) do
+  def attrs_from_assocs(assocs, namespace) do
     assocs
     |> Enum.map(&attr_from_assoc(&1, namespace))
     |> Enum.reject(&is_nil/1)

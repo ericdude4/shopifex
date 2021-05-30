@@ -13,8 +13,7 @@ defmodule Mix.Tasks.Shopifex.Install do
   use Mix.Task
 
   alias Mix.{Ecto, Shopifex}
-  alias Mix.Tasks.Shopifex.Gen.{Migration}
-  # alias Mix.Tasks.Shopifex.Gen.{Migration, Schemas}
+  alias Mix.Tasks.Shopifex.Gen.{Migration, Schemas}
 
   @switches [context_app: :string, migration: :boolean, schemas: :boolean]
   @default_opts [migration: true, schemas: true]
@@ -27,7 +26,6 @@ defmodule Mix.Tasks.Shopifex.Install do
     args
     |> Shopifex.parse_options(@switches, @default_opts)
     |> parse()
-    |> IO.inspect()
     |> run_migration(args)
     |> run_schemas(args)
     |> print_config_instructions(args)
@@ -44,7 +42,7 @@ defmodule Mix.Tasks.Shopifex.Install do
   defp run_migration(config, _args), do: config
 
   defp run_schemas(%{schemas: true} = config, args) do
-    # Schemas.run(args)
+    Schemas.run(args)
 
     config
   end
