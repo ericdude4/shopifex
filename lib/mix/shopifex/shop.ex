@@ -8,8 +8,7 @@ defmodule Mix.Shopifex.Shop do
 
   def assocs(),
     do: [
-      #  {:belongs_to, :owner, :users},
-      #  {:has_many, :access_tokens, :access_tokens, foreign_key: :application_id}
+       {:has_many, :grants, :grants}
     ]
 
   def indexes(),

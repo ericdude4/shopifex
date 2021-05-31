@@ -2,7 +2,6 @@ defmodule Mix.Shopifex.Schema do
   @moduledoc false
 
   alias Mix.Generator
-  alias Mix.Shopifex.Migration
 
   @template """
   defmodule <%= inspect schema.module %> do
@@ -13,6 +12,8 @@ defmodule Mix.Shopifex.Schema do
     @foreign_key_type :binary_id<% end %>
     schema <%= inspect schema.table %> do
       <%= for {k, v, o} <- schema.attrs do %>field <%= inspect k %>, <%= inspect v %>, <%= inspect o %>
+      <% end %><%= for assoc <- schema.assocs do %>
+      <%= assoc.type %> <%= inspect assoc.relation %>, <%= inspect assoc.related_schema %>, foreign_key: <%= inspect assoc.foreign_key %>
       <% end %>
       timestamps()
     end
@@ -20,15 +21,21 @@ defmodule Mix.Shopifex.Schema do
     @doc false
     def changeset(<%= schema.var_name %>, attrs) do
       <%= schema.var_name %>
-      |> cast(attrs, <%= inspect Enum.map(schema.attrs, fn {k, _, _} -> k end) %>)
-      |> validate_required(<%= inspect Enum.map(schema.attrs, fn {k, _, _} -> k end) %>)
+      |> cast(attrs, <%= inspect Enum.map(schema.attrs, fn
+        {k, _, _} -> k
+        {k, _} -> k
+      end) %>)
+      |> validate_required( <%= inspect Enum.map(schema.attrs, fn
+        {k, _, _} -> k
+        {k, _} -> k
+      end) %>)
     end
   end
   """
 
-  alias Mix.Shopifex.Shop
+  alias Mix.Shopifex.{Shop, Plan, Grant}
 
-  @schemas [{"shop", Shop}]
+  @schemas [{"shop", Shop}, {"plan", Plan}, {"grant", Grant}]
 
   @spec create_schema_files(atom(), binary(), keyword()) :: any()
   def create_schema_files(context_app, namespace, opts) do
@@ -36,7 +43,7 @@ defmodule Mix.Shopifex.Schema do
       app_base = Mix.Shopifex.app_base(context_app)
       table_name = "#{namespace}_#{table}s"
       var_name = "#{namespace}_#{table}"
-      context = Macro.camelize(table_name)
+      context = Macro.camelize("#{namespace}_shops")
       module = Macro.camelize("#{namespace}_#{table}")
       file = "#{Macro.underscore(module)}.ex"
       module = Module.concat([app_base, context, module])
@@ -44,7 +51,11 @@ defmodule Mix.Shopifex.Schema do
 
       attrs =
         schema.attrs()
-        |> Kernel.++(Migration.attrs_from_assocs(schema.assocs(), namespace))
+        |> Kernel.++(Mix.Shopifex.Migration.attrs_from_assocs(schema.assocs(), namespace))
+
+      assocs =
+        schema.assocs()
+        |> Enum.map(&build_assoc(&1, app_base, namespace, context))
 
       content =
         EEx.eval_string(@template,
@@ -53,7 +64,8 @@ defmodule Mix.Shopifex.Schema do
             table: table_name,
             var_name: var_name,
             binary_id: binary_id,
-            attrs: attrs
+            attrs: attrs,
+            assocs: assocs
           },
           otp_app: context_app
         )
@@ -66,5 +78,59 @@ defmodule Mix.Shopifex.Schema do
       |> Path.join(file)
       |> Generator.create_file(content)
     end
+  end
+
+  defp build_assoc({:belongs_to, field, related_table}, app_base, namespace, _context) do
+    related_context =
+      String.to_atom("#{namespace}_#{related_table}")
+      |> Atom.to_string()
+      |> Macro.camelize()
+
+    related_schema =
+      String.to_atom("#{namespace}_#{related_table}")
+      |> Atom.to_string()
+      |> String.trim_trailing("s")
+      |> Macro.camelize()
+
+    related_schema = Module.concat([app_base, related_context, related_schema])
+
+    foreign_key =
+      field
+      |> Atom.to_string()
+      |> Kernel.<>("_id")
+      |> String.to_atom()
+
+    %{
+      type: :belongs_to,
+      relation: field,
+      related_schema: related_schema,
+      foreign_key: foreign_key
+    }
+  end
+
+  defp build_assoc({:has_many, field, related_table}, app_base, namespace, context) do
+    related_schema =
+      String.to_atom("#{namespace}_#{related_table}")
+      |> Atom.to_string()
+      |> String.trim_trailing("s")
+      |> Macro.camelize()
+
+    foreign_key =
+      context
+      |> Macro.underscore()
+      |> String.split("_")
+      |> List.last()
+      |> String.trim_trailing("s")
+      |> Kernel.<>("_id")
+      |> String.to_atom()
+
+    related_schema = Module.concat([app_base, context, related_schema])
+
+    %{
+      type: :has_many,
+      relation: field,
+      related_schema: related_schema,
+      foreign_key: foreign_key
+    }
   end
 end

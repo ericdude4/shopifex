@@ -51,7 +51,8 @@ defmodule Mix.Shopifex.Controller do
 
   @controllers [
     {"auth_controller", ""},
-    {"webhook_controller", @webhook_boilerplate}
+    {"webhook_controller", @webhook_boilerplate},
+    {"payment_controller", ""}
   ]
 
   @spec create_controller_files(atom(), binary(), keyword()) :: any()

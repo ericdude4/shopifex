@@ -90,10 +90,12 @@ defmodule Mix.Shopifex.Migration do
   end
   """
 
-  alias Mix.Shopifex.Shop
+  alias Mix.Shopifex.{Shop, Plan, Grant}
 
   @schemas [
-    {"shops", Shop}
+    {"shops", Shop},
+    {"plans", Plan},
+    {"grants", Grant}
   ]
 
   @spec gen(binary(), binary(), map()) :: binary()
@@ -193,4 +195,7 @@ defmodule Mix.Shopifex.Migration do
 
   defp to_migration_index(table, {key_or_keys, true}),
     do: "create unique_index(:#{table}, #{inspect(List.wrap(key_or_keys))})"
+
+  defp to_migration_index(table, {key_or_keys, :gin}),
+    do: "create index(:#{table}, #{inspect(List.wrap(key_or_keys))}, using: \"GIN\")"
 end
