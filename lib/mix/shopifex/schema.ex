@@ -33,14 +33,26 @@ defmodule Mix.Shopifex.Schema do
   end
   """
 
+  @payment_guard_template """
+  defmodule <%= inspect module %> do
+    use Shopifex.PaymentGuard
+
+    @moduledoc \"\"\"
+    For available callbacks, see https://hexdocs.pm/shopifex/Shopifex.PaymentGuard.html
+    \"\"\"
+
+  end
+  """
+
   alias Mix.Shopifex.{Shop, Plan, Grant}
 
   @schemas [{"shop", Shop}, {"plan", Plan}, {"grant", Grant}]
 
   @spec create_schema_files(atom(), binary(), keyword()) :: any()
   def create_schema_files(context_app, namespace, opts) do
+    app_base = Mix.Shopifex.app_base(context_app)
+
     for {table, schema} <- @schemas do
-      app_base = Mix.Shopifex.app_base(context_app)
       table_name = "#{namespace}_#{table}s"
       var_name = "#{namespace}_#{table}"
       context = Macro.camelize("#{namespace}_shops")
@@ -78,6 +90,21 @@ defmodule Mix.Shopifex.Schema do
       |> Path.join(file)
       |> Generator.create_file(content)
     end
+
+    # Create the payment_guard boilerplate module
+    dir = "lib/#{context_app}/"
+
+    File.mkdir_p!(dir)
+
+    file = "#{namespace}_payment_guard.ex"
+    module = Macro.camelize("#{namespace}_payment_guard")
+    module = Module.concat([app_base, module])
+
+    content = EEx.eval_string(@payment_guard_template, module: module)
+
+    dir
+    |> Path.join(file)
+    |> Generator.create_file(content)
   end
 
   defp build_assoc({:belongs_to, field, related_table}, app_base, namespace, _context) do
