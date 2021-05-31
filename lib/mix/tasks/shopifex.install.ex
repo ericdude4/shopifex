@@ -13,10 +13,10 @@ defmodule Mix.Tasks.Shopifex.Install do
   use Mix.Task
 
   alias Mix.{Ecto, Shopifex}
-  alias Mix.Tasks.Shopifex.Gen.{Migration, Schemas}
+  alias Mix.Tasks.Shopifex.Gen.{Migration, Schemas, Controllers}
 
-  @switches [context_app: :string, migration: :boolean, schemas: :boolean]
-  @default_opts [migration: true, schemas: true]
+  @switches [context_app: :string, migration: :boolean, schemas: :boolean, controllers: :boolean]
+  @default_opts [migration: true, schemas: true, controllers: true]
   @mix_task "shopifex.install"
 
   @impl true
@@ -28,6 +28,7 @@ defmodule Mix.Tasks.Shopifex.Install do
     |> parse()
     |> run_migration(args)
     |> run_schemas(args)
+    |> run_controllers(args)
     |> print_config_instructions(args)
   end
 
@@ -48,6 +49,14 @@ defmodule Mix.Tasks.Shopifex.Install do
   end
 
   defp run_schemas(config, _args), do: config
+
+  defp run_controllers(%{controllers: true} = config, args) do
+    Controllers.run(args)
+
+    config
+  end
+
+  defp run_controllers(config, _args), do: config
 
   defp print_config_instructions(config, args) do
     [repo | _repos] = Ecto.parse_repo(args)

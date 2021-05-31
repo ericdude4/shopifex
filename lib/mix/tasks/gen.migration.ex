@@ -15,7 +15,7 @@ defmodule Mix.Tasks.Shopifex.Gen.Migration do
   ## Arguments
     * `-r`, `--repo` - the repo module
     * `--binary-id` - use binary id for primary keys
-    * `--namespace` - namespace to prepend table and schema module name
+    * `--namespace` - namespace to prepend table, schema and controller module name
   """
   use Mix.Task
 

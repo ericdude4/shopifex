@@ -7,7 +7,7 @@ defmodule Mix.Tasks.Shopifex.Gen.Schemas do
       mix shopifex.gen.schemas --binary-id --namespace shopify_app
   ## Arguments
     * `--binary-id` - use binary id for primary keys
-    * `--namespace` - namespace to prepend table and schema module name
+    * `--namespace` - namespace to prepend table, schema and controller module name
     * `--context-app` - context app to use for path and module names
   """
   use Mix.Task
