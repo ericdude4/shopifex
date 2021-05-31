@@ -15,6 +15,18 @@ def deps do
 end
 ```
 ## Quickstart
+#### Run the install script
+This will install all of the supported Shopifex features.
+```
+mix shopifex.install
+```
+Follow the output `config.ex` and `router.ex` instructions from the install script.
+#### Run migrations
+```
+mix ecto.migrate
+```
+
+## Manual Installation
 Create the shop schema where the installation data will be stored:
 ```
 mix phx.gen.schema Shop shops url:string access_token:string scope:string
@@ -29,7 +41,6 @@ config :shopifex,
   shop_schema: MyApp.Shop,
   web_module: MyAppWeb,
   repo: MyApp.Repo,
-  path_prefix: "/shopfy-app", # optional, default is "" (empty string). This is useful for umbrella apps scoped by a reverse proxy
   redirect_uri: "https://myapp.ngrok.io/auth/install",
   reinstall_uri: "https://myapp.ngrok.io/auth/update",
   webhook_uri: "https://myapp.ngrok.io/webhook",
@@ -52,6 +63,7 @@ plug Plug.Parsers,
 Add this line near the top of `router.ex` to include the Shopifex pipelines
 
 ```elixir
+require ShopifexWeb.Routes
 ShopifexWeb.Routes.pipelines()
 ```
 Now the following pipelines are accessible:
@@ -67,7 +79,7 @@ Now add this basic example of these plugs in action in `router.ex`. These endpoi
 ### Routing
 ```elixir
 # Include all auth (when Shopify requests to render your app in an iframe), installation and update routes 
-ShopifexWeb.Routes.auth_routes(MyAppWeb)
+ShopifexWeb.Routes.auth_routes(MyAppWeb.AuthController)
 
 # Endpoints accessible within the Shopify admin panel iFrame.
 # Don't include this scope block if you are creating a SPA.
@@ -219,7 +231,7 @@ end
 ```
 Add payment routes to `router.ex`:
 ```elixir
-ShopifexWeb.Routes.payment_routes(MyAppWeb)
+ShopifexWeb.Routes.payment_routes(MyAppWeb.PaymentController)
 ```
 
 To manage plans, I recommend using [kaffy admin package](https://github.com/aesmail/kaffy)

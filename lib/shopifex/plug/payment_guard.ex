@@ -1,4 +1,24 @@
 defmodule Shopifex.Plug.PaymentGuard do
+  @moduledoc """
+  Add payment guards to your routes or controllers!
+
+  ## Examples:
+
+  ```elixir
+  defmodule MyAppWeb.AdminLinkController do
+    use MyAppWeb, :controller
+    require Logger
+
+    plug Shopifex.Plug.PaymentGuard, "premium_plan" when action in [:premium_function]
+
+    def premium_function(conn, _params) do
+      # Wow, much premium.
+      conn
+      |> send_resp(200, "success")
+    end
+  end
+  ```
+  """
   require Logger
 
   def init(options) do
