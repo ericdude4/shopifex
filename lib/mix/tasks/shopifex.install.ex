@@ -12,11 +12,11 @@ defmodule Mix.Tasks.Shopifex.Install do
 
   use Mix.Task
 
-  alias Mix.{Ecto, Shopifex}
+  alias Mix.{Ecto, Shopifex, Shopifex.Config}
   alias Mix.Tasks.Shopifex.Gen.{Migration, Schemas, Controllers}
 
   @switches [context_app: :string, migration: :boolean, schemas: :boolean, controllers: :boolean]
-  @default_opts [migration: true, schemas: true, controllers: true]
+  @default_opts [migration: true, schemas: true, controllers: true, namespace: "shopify"]
   @mix_task "shopifex.install"
 
   @impl true
@@ -58,21 +58,85 @@ defmodule Mix.Tasks.Shopifex.Install do
 
   defp run_controllers(config, _args), do: config
 
-  defp print_config_instructions(config, args) do
+  defp print_config_instructions(%{namespace: namespace} = config, args) do
     [repo | _repos] = Ecto.parse_repo(args)
-    # context_app = Map.get(config, :context_app) || Shopifex.otp_app()
-    # resource_owner = resource_owner(ProviderConfig.app_base(context_app))
+    context_app = Map.get(config, :context_app) || Shopifex.otp_app()
+    app_base = Mix.Shopifex.app_base(context_app)
+    schema_context = Module.concat([app_base, Macro.camelize("#{namespace}_shops")])
+    shop_schema = Module.concat(schema_context, Macro.camelize("#{namespace}_shop"))
+    plan_schema = Module.concat(schema_context, Macro.camelize("#{namespace}_plan"))
+    grant_schema = Module.concat(schema_context, Macro.camelize("#{namespace}_grant"))
+    payment_guard = Module.concat([app_base, Macro.camelize("#{namespace}_payment_guard")])
 
-    # content = Config.gen(context_app, repo: inspect(repo), resource_owner: resource_owner)
-    content = ""
+    camel_namespace = Macro.camelize("#{namespace}")
 
-    Mix.shell().info("""
-    Shopifex has been installed! Please append the following to `config/config.ex`:
-    #{content}
-    """)
+    tunnel_url =
+      Mix.Shell.IO.prompt("Enter tunnel URL (https://myapp.ngrok.io):")
+      |> String.trim_trailing("\n")
+
+    content =
+      Config.gen(
+        repo: inspect(repo),
+        app_base: app_base,
+        shop_schema: shop_schema,
+        plan_schema: plan_schema,
+        grant_schema: grant_schema,
+        payment_guard: payment_guard,
+        tunnel_url: tunnel_url,
+        camel_namespace: camel_namespace
+      )
+
+    print_white("Shopifex has been installed! Please append the following to `config/config.ex`:")
+
+    Mix.shell().info("#{content}")
+
+    print_white("Add the following routes to `lib/#{context_app}_web/router.ex`:")
+
+    """
+
+      require ShopifexWeb.Routes
+
+      ShopifexWeb.Routes.pipelines()
+
+      # Include all auth (when Shopify requests to render your app in an iframe), installation and update routes
+      ShopifexWeb.Routes.auth_routes(<%= inspect app_base %>Web.<%= camel_namespace %>AuthController)
+
+      # Include all payment routes
+      ShopifexWeb.Routes.payment_routes(<%= inspect app_base %>Web.<%= camel_namespace %>PaymentController)
+
+      # Endpoints accessible within the Shopify admin panel iFrame.
+      # Don't include this scope block if you are creating a SPA.
+      scope "/", <%= inspect app_base %>Web do
+        pipe_through [:shopifex_browser, :shopify_session]
+
+        get "/", PageController, :index
+      end
+
+      # Make your webhook endpoint look like this
+      scope "/webhook", <%= inspect app_base %>Web do
+        pipe_through [:shopify_webhook]
+
+        post "/", <%= camel_namespace %>WebhookController, :action
+      end
+
+      # Place your admin link endpoints in here. TODO: create this controller
+      scope "/admin-links", <%= inspect app_base %>Web do
+        pipe_through [:shopify_admin_link]
+
+        # get "/do-a-thing", <%= camel_namespace %>AdminLinkController, :do_a_thing
+      end
+    """
+    |> EEx.eval_string(app_base: app_base, camel_namespace: camel_namespace)
+    |> Mix.shell().info()
 
     config
   end
 
-  defp resource_owner(base), do: inspect(Module.concat([base, "Users", "User"]))
+  defp print_white(text) do
+    (IO.ANSI.white_background() <>
+       IO.ANSI.black() <>
+       text <>
+       IO.ANSI.reset())
+    |> Mix.shell().info()
+  end
 end

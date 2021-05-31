@@ -49,46 +49,46 @@ defmodule ShopifexWeb.Routes do
     end
   end
 
-  defmacro auth_routes(app_web_module \\ ShopifexWeb) do
+  defmacro auth_routes(controller \\ ShopifexWeb.PaymentController) do
     quote do
-      scope "/auth", unquote(app_web_module) do
+      scope "/auth" do
         pipe_through([:shopifex_browser, :shopify_session])
-        get("/", AuthController, :auth)
+        get("/", unquote(controller), :auth)
       end
 
-      scope "/auth", unquote(app_web_module) do
+      scope "/auth" do
         pipe_through([:shopifex_browser, :validate_install_hmac])
-        get("/install", AuthController, :install)
-        get("/update", AuthController, :update)
+        get("/install", unquote(controller), :install)
+        get("/update", unquote(controller), :update)
       end
 
-      scope "/initialize-installation", unquote(app_web_module) do
+      scope "/initialize-installation" do
         pipe_through([:shopifex_browser])
-        get("/", AuthController, :initialize_installation)
+        get("/", unquote(controller), :initialize_installation)
       end
     end
   end
 
-  defmacro payment_routes(app_web_module \\ ShopifexWeb) do
+  defmacro payment_routes(controller \\ ShopifexWeb.PaymentController) do
     quote do
-      scope "/payment", unquote(app_web_module) do
+      scope "/payment" do
         pipe_through([:shopifex_browser, :shopify_session])
 
-        get("/show-plans", PaymentController, :show_plans)
-        post("/select-plan", PaymentController, :select_plan)
+        get("/show-plans", unquote(controller), :show_plans)
+        post("/select-plan", unquote(controller), :select_plan)
       end
 
-      scope "/payment", unquote(app_web_module) do
+      scope "/payment" do
         pipe_through([:shopifex_browser])
-        get("/complete", PaymentController, :complete_payment)
+        get("/complete", unquote(controller), :complete_payment)
       end
 
-      scope "/payment", unquote(app_web_module) do
+      scope "/payment" do
         pipe_through([:shopify_api])
 
         scope "/api" do
-          options("/select-plan", PaymentController, :select_plan)
-          post("/select-plan", PaymentController, :select_plan)
+          options("/select-plan", unquote(controller), :select_plan)
+          post("/select-plan", unquote(controller), :select_plan)
         end
       end
     end
