@@ -1,4 +1,4 @@
-![Shopifex](https://user-images.githubusercontent.com/15239680/120365181-1e302f00-c2dc-11eb-9b93-ea29acb51d59.png)
+<img width="350" src="https://user-images.githubusercontent.com/15239680/120365181-1e302f00-c2dc-11eb-9b93-ea29acb51d59.png" alt="Shopifex">
 
 ---
 [![Hex.pm](https://img.shields.io/hexpm/v/shopifex.svg)](https://hex.pm/packages/shopifex)
