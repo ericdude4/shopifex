@@ -1,4 +1,7 @@
-# Shopifex
+![Shopifex](https://user-images.githubusercontent.com/15239680/120365181-1e302f00-c2dc-11eb-9b93-ea29acb51d59.png)
+
+---
+[![Hex.pm](https://img.shields.io/hexpm/v/shopifex.svg)](https://hex.pm/packages/shopifex)
 
 A simple boilerplate package for creating Shopify embedded apps with the Elixir Phoenix framework. [https://hexdocs.pm/shopifex](https://hexdocs.pm/shopifex)
 
@@ -10,7 +13,7 @@ by adding `shopifex` to your list of dependencies in `mix.exs`:
 ```elixir
 def deps do
   [
-    {:shopifex, "~> 0.6"}
+    {:shopifex, "~> 1.0"}
   ]
 end
 ```
