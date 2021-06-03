@@ -1,33 +1,35 @@
 defmodule Shopifex do
   @moduledoc """
-  # Welcome to Shopifex!
+  A simple boilerplate package for creating Shopify embedded apps with the Elixir Phoenix framework. [https://hexdocs.pm/shopifex](https://hexdocs.pm/shopifex)
 
-  ## Configuration (All configuration options are required)
-  * `:app_name` - This gets used in the Shopifex provided app installation page
-  * `:repo` - The Ecto.Repo for your application
-  * `:shop_schema` - Your Ecto.Schema that must have :url, :scopes, and :access_token properties. This is used to install and load stores into the session
-  * `:redirect_uri` - The redirect URI used in the Shopify app installation process. Must be whitelisted in your Shopify app configuration
-  * `:reinstall_uri` - The redirect URI used in the Shopify app reinstallation process. Must be whitelisted in your Shopify app configuration
-  * `:api_key` - Your Shopify app's API key
-  * `:secret` - Your Shopify app's secret
-  * `scopes` - Shopify OAuth scopes which your application requires
-  * `:webhook_uri` - When webhooks are created by Shopifex, this is used as the webhook endpoint
-  * `:webhook_topics` - Topics to subscribe to after installation is complete
+  ## Installation
 
-  Example:
+  The package can be installed
+  by adding `shopifex` to your list of dependencies in `mix.exs`:
 
+  ```elixir
+  def deps do
+  [
+    {:shopifex, "~> 1.0"}
+  ]
+  end
   ```
-  config :shopifex,
-    app_name: "MyApp",
-    repo: MyApp.Repo,
-    shop_schema: MyApp.Shop,
-    api_key: "shopifyapikey123",
-    secret: "shopifyapisecret456",
-    redirect_uri: "https://myapp.ngrok.io/auth/install",
-    reinstall_uri: "https://myapp.ngrok.io/auth/update",
-    scopes: "read_inventory,write_inventory,read_products,write_products,read_orders",
-    webhook_uri: "https://myapp.ngrok.io/webhook",
-    webhook_topics: ["app/uninstalled"]
+  ## Quickstart
+  #### Run the install script
+  This will install all of the supported Shopifex features.
   ```
+  mix shopifex.install
+  ```
+  Follow the output `config.ex` and `router.ex` instructions from the install script.
+  #### Run migrations
+  ```
+  mix ecto.migrate
+  ```
+  #### Update Shopify app details
+  Replace tunnel-url with your own where applicable.
+  - Set "App URL" to `https://my-app.ngrok.io/auth`
+  - Add `https://my-app.ngrok.io/auth/install` & `https://my-app.ngrok.io/auth/update` to your app's "Allowed redirection URL(s)"
+  - Add your Shopify app's API key and API secret key to `config :shopifex, api_key: "your-api-key", secret: "your-api-secret"`
+
   """
 end

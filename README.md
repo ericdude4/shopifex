@@ -1,6 +1,7 @@
-<img width="350" src="https://user-images.githubusercontent.com/15239680/120365181-1e302f00-c2dc-11eb-9b93-ea29acb51d59.png" alt="Shopifex">
+<img width="350" src="https://github.com/ericdude4/shopifex/raw/master/guides/images/logo.png" alt="Shopifex">
 
 ---
+
 [![Hex.pm](https://img.shields.io/hexpm/v/shopifex.svg)](https://hex.pm/packages/shopifex)
 
 A simple boilerplate package for creating Shopify embedded apps with the Elixir Phoenix framework. [https://hexdocs.pm/shopifex](https://hexdocs.pm/shopifex)
