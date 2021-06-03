@@ -28,6 +28,11 @@ Follow the output `config.ex` and `router.ex` instructions from the install scri
 ```
 mix ecto.migrate
 ```
+#### Update Shopify app details
+Replace tunnel-url with your own where applicable.
+- Set "App URL" to `https://my-app.ngrok.io/auth`
+- Add `https://my-app.ngrok.io/auth/install` & `https://my-app.ngrok.io/auth/update` to your app's "Allowed redirection URL(s)"
+- Add your Shopify app's API key and API secret key to `config :shopifex, api_key: "your-api-key", secret: "your-api-secret"`
 
 ## Manual Installation
 Create the shop schema where the installation data will be stored:
