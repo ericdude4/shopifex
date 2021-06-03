@@ -3,8 +3,8 @@ defmodule ShopifexDummyWeb.Router do
   require ShopifexWeb.Routes
 
   ShopifexWeb.Routes.pipelines()
-  ShopifexWeb.Routes.payment_routes(ShopifexDummyWeb)
-  ShopifexWeb.Routes.auth_routes(ShopifexDummyWeb)
+  ShopifexWeb.Routes.payment_routes(ShopifexDummyWeb.PaymentController)
+  ShopifexWeb.Routes.auth_routes(ShopifexDummyWeb.AuthController)
 
   scope "/", ShopifexDummyWeb do
     pipe_through([:shopifex_browser, :shopify_session])

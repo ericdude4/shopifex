@@ -11,7 +11,7 @@ defmodule Mix.Shopifex.Schema do
     @primary_key {:id, :binary_id, autogenerate: true}
     @foreign_key_type :binary_id<% end %>
     schema <%= inspect schema.table %> do
-      <%= for {k, v, o} <- schema.attrs do %>field <%= inspect k %>, <%= inspect v %>, <%= inspect o %>
+      <%= for {k, v, o} <- schema.attrs do %>field <%= inspect k %>, <%= inspect (if v == :bigint do :integer else v end) %>, <%= inspect o %>
       <% end %><%= for assoc <- schema.assocs do %>
       <%= assoc.type %> <%= inspect assoc.relation %>, <%= inspect assoc.related_schema %>, foreign_key: <%= inspect assoc.foreign_key %>
       <% end %>
@@ -26,9 +26,14 @@ defmodule Mix.Shopifex.Schema do
         {k, _} -> k
       end) %>)
       |> validate_required( <%= inspect Enum.map(schema.attrs, fn
-        {k, _, _} -> k
+        {k, _, opts} ->
+          if Keyword.get(opts, :null, false) do
+            nil
+          else
+            k
+          end
         {k, _} -> k
-      end) %>)
+      end) |> Enum.reject(& is_nil(&1)) %>)
     end
   end
   """

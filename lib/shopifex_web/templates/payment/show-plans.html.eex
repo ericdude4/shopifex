@@ -3,7 +3,7 @@
         "Components.WrappedShowPlans",
         %{
             guard: @guard,
-            plans: Shopifex.Shops.list_plans_granting_guard(@guard),
+            plans: available_plans(@guard),
             shop_url: shop_url(@conn),
             redirect_after: @redirect_after,
             shopify_api_key: Application.get_env(:shopifex, :api_key),
