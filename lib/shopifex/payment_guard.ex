@@ -130,10 +130,11 @@ defmodule Shopifex.PaymentGuard do
       @impl Shopifex.PaymentGuard
       def create_grant(shop, plan, charge_id) do
         Shopifex.Shops.create_grant(%{
-          shop: shop,
+          shop_id: shop.id,
           charge_id: charge_id,
           grants: plan.grants,
-          remaining_usages: plan.usages
+          remaining_usages: plan.usages,
+          total_usages: 0
         })
       end
 
