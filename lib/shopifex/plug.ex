@@ -100,7 +100,8 @@ defmodule Shopifex.Plug do
       |> Enum.filter(&(!is_nil(&1)))
       |> Enum.join("&")
 
-    :crypto.hmac(
+    :crypto.mac(
+      :hmac,
       :sha256,
       Application.fetch_env!(:shopifex, :secret),
       query_string
@@ -110,7 +111,8 @@ defmodule Shopifex.Plug do
   end
 
   def build_hmac(%Plug.Conn{method: "POST"} = conn) do
-    :crypto.hmac(
+    :crypto.mac(
+      :hmac,
       :sha256,
       Application.fetch_env!(:shopifex, :secret),
       conn.assigns[:raw_body]
