@@ -107,7 +107,7 @@ end
 
 # Place your admin link endpoints in here
 scope "/admin-links", MyAppWeb do
-  pipe_through [:admin_links, :shopify_webhook]
+  pipe_through [:shopify_admin_link]
 
   get "/do-a-thing", AdminLinkController, :do_a_thing
 end
@@ -254,9 +254,11 @@ defmodule MyAppWeb.AdminLinkController do
   plug Shopifex.Plug.PaymentGuard, "premium_plan" when action in [:premium_function]
   
   def premium_function(conn, _params) do
+    shop = Shopifex.Plug.current_shop(conn)
+    
     # Wow, much premium.
     conn
-    |> send_resp(200, "success")
+    |> send_resp(200, "Hi there, #{shop.url}!")
   end
 end
 ```
