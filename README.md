@@ -9,7 +9,7 @@ A simple boilerplate package for creating Shopify embedded apps with the Elixir 
 ## Installation
 
 The package can be installed
-by adding `shopifex` to your list of dependencies in `mix.exs`:
+by adding `shopifex` to your list of dependencies in `mix.exs`: (note, OTP 22 or greater required)
 
 ```elixir
 def deps do
