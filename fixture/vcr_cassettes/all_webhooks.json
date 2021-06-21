@@ -1,0 +1,60 @@
+[
+  {
+    "request": {
+      "body": "",
+      "headers": {
+        "X-Shopify-Access-Token": "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",
+        "Content-Type": "application/json"
+      },
+      "method": "get",
+      "options": [],
+      "request_body": "",
+      "url": "https://shopifex-test.myshopify.com/admin/webhooks.json"
+    },
+    "response": {
+      "binary": false,
+      "body": "{\"webhooks\":[{\"id\":1039776121010,\"address\":\"https:\\/\\/piknpak.ngrok.io\\/webhook\",\"topic\":\"app\\/uninstalled\",\"created_at\":\"2021-06-21T14:26:18-04:00\",\"updated_at\":\"2021-06-21T14:26:18-04:00\",\"format\":\"json\",\"fields\":[],\"metafield_namespaces\":[],\"api_version\":\"2020-07\",\"private_metafield_namespaces\":[]},{\"id\":1039798468786,\"address\":\"https:\\/\\/shopifex-dummy.com\\/webhook\",\"topic\":\"carts\\/update\",\"created_at\":\"2021-06-21T16:32:15-04:00\",\"updated_at\":\"2021-06-21T16:32:15-04:00\",\"format\":\"json\",\"fields\":[],\"metafield_namespaces\":[],\"api_version\":\"2020-07\",\"private_metafield_namespaces\":[]},{\"id\":1039798501554,\"address\":\"https:\\/\\/shopifex-dummy.com\\/webhook\",\"topic\":\"orders\\/create\",\"created_at\":\"2021-06-21T16:32:16-04:00\",\"updated_at\":\"2021-06-21T16:32:16-04:00\",\"format\":\"json\",\"fields\":[],\"metafield_namespaces\":[],\"api_version\":\"2020-07\",\"private_metafield_namespaces\":[]}]}",
+      "headers": {
+        "Date": "Mon, 21 Jun 2021 20:32:45 GMT",
+        "Content-Type": "application/json; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "X-Sorting-Hat-PodId": "177",
+        "X-Sorting-Hat-ShopId": "57819463858",
+        "Vary": "Accept-Encoding",
+        "Referrer-Policy": "origin-when-cross-origin",
+        "X-Frame-Options": "DENY",
+        "X-ShopId": "57819463858",
+        "X-ShardId": "177",
+        "X-Stats-UserId": "",
+        "X-Stats-ApiClientId": "4212875",
+        "X-Stats-ApiPermissionId": "321395556530",
+        "HTTP_X_SHOPIFY_SHOP_API_CALL_LIMIT": "1/40",
+        "X-Shopify-Shop-Api-Call-Limit": "1/40",
+        "X-Shopify-API-Version": "2020-04",
+        "X-Shopify-API-Version-Warning": "https://shopify.dev/concepts/about-apis/versioning",
+        "Strict-Transport-Security": "max-age=7889238",
+        "X-Shopify-Stage": "production",
+        "Content-Security-Policy": "default-src 'self' data: blob: 'unsafe-inline' 'unsafe-eval' https://* shopify-pos://*; block-all-mixed-content; child-src 'self' https://* shopify-pos://*; connect-src 'self' wss://* https://*; frame-ancestors 'none'; img-src 'self' data: blob: https:; script-src https://cdn.shopify.com https://cdn.shopifycdn.net https://checkout.shopifycs.com https://api.stripe.com https://mpsnare.iesnare.com https://appcenter.intuit.com https://www.paypal.com https://js.braintreegateway.com https://c.paypal.com https://maps.googleapis.com https://www.google-analytics.com https://v.shopify.com https://widget.intercom.io https://js.intercomcdn.com 'self' 'unsafe-inline' 'unsafe-eval'; upgrade-insecure-requests; report-uri /csp-report?source%5Baction%5D=index&source%5Bapp%5D=Shopify&source%5Bcontroller%5D=admin%2Fwebhooks&source%5Bsection%5D=admin_api&source%5Buuid%5D=77b1f3e8-dadd-450c-bf42-b130df3bc410",
+        "X-Content-Type-Options": "nosniff",
+        "X-Download-Options": "noopen",
+        "X-Permitted-Cross-Domain-Policies": "none",
+        "X-XSS-Protection": "1; mode=block; report=/xss-report?source%5Baction%5D=index&source%5Bapp%5D=Shopify&source%5Bcontroller%5D=admin%2Fwebhooks&source%5Bsection%5D=admin_api&source%5Buuid%5D=77b1f3e8-dadd-450c-bf42-b130df3bc410",
+        "X-Dc": "gcp-us-central1,gcp-us-east1,gcp-us-east1",
+        "NEL": "{\"report_to\":\"network-errors\",\"max_age\":2592000,\"success_fraction\":0.0001}",
+        "Report-To": "{\"group\":\"network-errors\",\"max_age\":2592000,\"endpoints\":[{\"url\":\"https://monorail-edge.shopifysvc.com/v1/reports/nel/20190325/shopify\"}]}",
+        "X-Request-ID": "77b1f3e8-dadd-450c-bf42-b130df3bc410",
+        "Set-Cookie": "_y=4735267b-6a18-4244-9776-15c179fdfa3e; Expires=Tue, 21-Jun-22 20:32:45 GMT; Domain=shopifex-test.myshopify.com; Path=/; SameSite=Lax",
+        "set-cookie": "_s=62b700cf-1e9e-4ddf-93ba-91d05385dfbe; Expires=Mon, 21-Jun-21 21:02:45 GMT; Domain=shopifex-test.myshopify.com; Path=/; SameSite=Lax",
+        "CF-Cache-Status": "DYNAMIC",
+        "cf-request-id": "0ad1df99300000cacc56102000000001",
+        "Expect-CT": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\"",
+        "Server": "cloudflare",
+        "CF-RAY": "663002084c9ecacc-YYZ",
+        "alt-svc": "h3-27=\":443\"; ma=86400, h3-28=\":443\"; ma=86400, h3-29=\":443\"; ma=86400, h3=\":443\"; ma=86400"
+      },
+      "status_code": 200,
+      "type": "ok"
+    }
+  }
+]

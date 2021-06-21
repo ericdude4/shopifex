@@ -2,6 +2,8 @@ defmodule Shopifex.Shops do
   import Ecto.Query, warn: false
   require Logger
 
+  @type shop :: %{access_token: String.t(), scope: String.t(), url: String.t()}
+
   @moduledoc """
   This module acts as the context for any database interaction from within the Shopifex
   package.
@@ -41,49 +43,82 @@ defmodule Shopifex.Shops do
   @doc """
   Check the webhooks set on the shop, then compare that to the required webhooks based on the current
   status of the shop.
+
+  Returns a list of webhooks which were created.
   """
   def configure_webhooks(shop) do
-    {:ok, webhooks_response} =
-      Shopify.session(shop.url, shop.access_token)
-      |> Shopify.Webhook.all()
+    with {:ok, current_webhooks} <- get_current_webhooks(shop) do
+      current_webhook_topics = Enum.map(current_webhooks, & &1.topic)
 
-    webhooks = webhooks_response.data
+      Logger.info(
+        "All current webhook topics for #{shop.url}: #{Enum.join(current_webhook_topics, ", ")}"
+      )
 
-    current_webhook_topics =
-      webhooks
-      |> Enum.map(& &1.topic)
+      current_webhook_topics = MapSet.new(current_webhook_topics)
 
-    Logger.info(
-      "All current webhook topics for #{shop.url}: #{Enum.join(current_webhook_topics, ", ")}"
-    )
+      topics = MapSet.new(Application.fetch_env!(:shopifex, :webhook_topics))
 
-    current_webhook_topics = MapSet.new(current_webhook_topics)
+      # Make sure all the required topics are conifgured.
+      subscribe_to_topics = MapSet.difference(topics, current_webhook_topics)
 
-    topics = MapSet.new(Application.fetch_env!(:shopifex, :webhook_topics))
+      Enum.reduce(subscribe_to_topics, [], fn topic, acc ->
+        Logger.info("Subscribing to topic #{topic}")
 
-    # Make sure all the required topics are conifgured.
-    subscribe_to_topics = MapSet.difference(topics, current_webhook_topics)
+        case create_webhook(shop, topic) do
+          {:ok, webhook} ->
+            [webhook | acc]
 
-    Enum.each(subscribe_to_topics, fn topic ->
-      Logger.info("subscribing to topic #{topic}")
-      create_webhook(shop, topic)
-    end)
+          error ->
+            Logger.info("Error subscribing to topic #{topic}: \n#{inspect(error)}")
+            acc
+        end
+      end)
+    end
+  end
+
+  @doc """
+  Returns the current webhooks for a Shop from the Shopify API.
+
+  Returns with `{:ok, webhooks}` on success. Can also return any
+  non-200 level HTTPoison response, or a Jason decode error.
+  """
+  @spec get_current_webhooks(shop :: shop()) :: {:ok, list()} | any()
+  def get_current_webhooks(shop) do
+    with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
+           HTTPoison.get("https://#{shop.url}/admin/webhooks.json",
+             "X-Shopify-Access-Token": shop.access_token,
+             "Content-Type": "application/json"
+           ),
+         {:ok, %{webhooks: webhooks}} <- Jason.decode(body, keys: :atoms) do
+      {:ok, webhooks}
+    end
   end
 
   defp create_webhook(shop, topic) do
-    {:ok, _response} =
-      HTTPoison.post(
-        "https://#{shop.url}/admin/webhooks.json",
-        Jason.encode!(%{
-          webhook: %{
-            topic: topic,
-            address: "#{Application.get_env(:shopifex, :webhook_uri)}",
-            format: "json"
-          }
-        }),
-        "X-Shopify-Access-Token": shop.access_token,
-        "Content-Type": "application/json"
-      )
+    with {:ok, %HTTPoison.Response{status_code: 201, body: body}} <-
+           HTTPoison.post(
+             "https://#{shop.url}/admin/webhooks.json",
+             Jason.encode!(%{
+               webhook: %{
+                 topic: topic,
+                 address: "#{Application.get_env(:shopifex, :webhook_uri)}",
+                 format: "json"
+               }
+             }),
+             "X-Shopify-Access-Token": shop.access_token,
+             "Content-Type": "application/json"
+           ),
+         {:ok, %{webhook: webhook}} <- Jason.decode(body, keys: :atoms) do
+      {:ok, webhook}
+    end
+  end
+
+  def delete_webhook(shop, id) do
+    HTTPoison.delete(
+      "https://#{shop.url}/admin/webhooks/#{id}.json",
+      "X-Shopify-Access-Token": shop.access_token,
+      "Content-Type": "application/json"
+    )
   end
 
   @doc """
