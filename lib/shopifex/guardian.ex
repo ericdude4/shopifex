@@ -2,7 +2,6 @@ defmodule Shopifex.Guardian do
   use Guardian,
     otp_app: :shopifex,
     issuer: Application.get_env(:shopifex, :app_name),
-    # issuer: "https://eric-fw-dev-store.myshopify.com/admin",
     secret_key: Application.get_env(:shopifex, :secret),
     allowed_algos: ["HS512", "HS256"]
 
