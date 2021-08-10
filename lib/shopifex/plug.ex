@@ -76,6 +76,20 @@ defmodule Shopifex.Plug do
     |> Plug.Conn.put_private(:shopifex, shopifex_private_data)
   end
 
+  @doc """
+  Places given shop into current session, making it accessible later on
+  via `Shopifex.Plug.current_shop(conn)`
+  """
+  @spec put_shop_in_session(conn :: Plug.Conn.t(), shop :: shop()) :: Plug.Conn.t()
+  def put_shop_in_session(conn, shop) do
+    shopifex_private_data =
+      conn.private
+      |> Map.get(:shopifex, %{})
+      |> Map.put(:shop, shop)
+
+    Plug.Conn.put_private(conn, :shopifex, shopifex_private_data)
+  end
+
   @spec build_hmac(conn :: Plug.Conn.t()) :: String.t()
   def build_hmac(%Plug.Conn{method: "GET"} = conn) do
     query_string =

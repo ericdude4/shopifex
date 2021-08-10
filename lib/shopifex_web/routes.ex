@@ -49,7 +49,7 @@ defmodule ShopifexWeb.Routes do
     end
   end
 
-  defmacro auth_routes(controller \\ ShopifexWeb.PaymentController) do
+  defmacro auth_routes(controller \\ ShopifexWeb.AuthController) do
     quote do
       scope "/auth" do
         pipe_through([:shopifex_browser, :shopify_session])
