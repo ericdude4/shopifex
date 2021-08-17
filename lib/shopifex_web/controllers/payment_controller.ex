@@ -17,6 +17,16 @@ defmodule ShopifexWeb.PaymentController do
   ```
   """
 
+
+  @doc """
+  Display the available payment plans for the user to select.
+  """
+  @callback render_plans(
+              conn :: Plug.Conn.t(),
+              guard_identifier :: String.t(),
+              redirect_after :: String.t()
+            ) :: Plug.Conn.t()
+
   @doc """
   An optional callback called after a payment is completed. By default, this function
   redirects the user to the app index within their Shopify admin panel.
@@ -38,7 +48,8 @@ defmodule ShopifexWeb.PaymentController do
               String.t()
             ) ::
               Plug.Conn.t()
-  @optional_callbacks after_payment: 5
+
+  @optional_callbacks render_plans: 3, after_payment: 5
 
   defmacro __using__(_opts) do
     quote do
@@ -51,7 +62,7 @@ defmodule ShopifexWeb.PaymentController do
         path_prefix = Application.get_env(:shopifex, :path_prefix, "")
         default_redirect_after = path_prefix <> "/?token=" <> Guardian.Plug.current_token(conn)
 
-        payment_guard.show_plans(
+        render_plans(
           conn,
           Map.get(params, "guard_identifier"),
           Map.get(params, "redirect_after", default_redirect_after)
@@ -199,12 +210,23 @@ defmodule ShopifexWeb.PaymentController do
       end
 
       @impl ShopifexWeb.PaymentController
+      def render_plans(conn, guard_identifier, redirect_after) do
+        conn
+        |> put_view(ShopifexWeb.PaymentView)
+        |> put_layout({ShopifexWeb.LayoutView, "app.html"})
+        |> render("show-plans.html",
+          guard: guard_identifier,
+          redirect_after: redirect_after
+        )
+      end
+
+      @impl ShopifexWeb.PaymentController
       def after_payment(conn, shop, _plan, _grant, redirect_after) do
         api_key = Application.get_env(:shopifex, :api_key)
         redirect(conn, external: "https://#{shop.url}/admin/apps/#{api_key}#{redirect_after}")
       end
 
-      defoverridable after_payment: 5
+      defoverridable render_plans: 3, after_payment: 5
     end
   end
 end

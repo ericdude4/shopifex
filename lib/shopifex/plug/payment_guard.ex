@@ -21,13 +21,18 @@ defmodule Shopifex.Plug.PaymentGuard do
   """
   require Logger
 
+  @router_helpers Module.concat([Application.compile_env!(:shopifex, :web_module), Router, Helpers])
+
   def init(options) do
     # initialize options
     options
   end
 
   @doc """
-  This makes sure the shop in the session contains a payment which unlocks the guard
+  This makes sure the shop in the session contains a payment which unlocks the guard.
+
+  If no payment is present which unlocks the guard, the conn will be redirected to your
+  application's PaymentController.show_plans route.
   """
   def call(conn, guard_identifier) do
     payment_guard = Application.fetch_env!(:shopifex, :payment_guard)
@@ -39,7 +44,10 @@ defmodule Shopifex.Plug.PaymentGuard do
         Logger.info("Payment guard blocked request")
         redirect_after = URI.encode_www_form("#{conn.request_path}?#{conn.query_string}")
 
-        payment_guard.show_plans(conn, guard_identifier, redirect_after)
+        show_plans_url = @router_helpers.payment_path(conn, :show_plans, %{guard_identifier: guard_identifier, redirect_after: redirect_after})
+
+        conn
+        |> Phoenix.Controller.redirect(to: show_plans_url)
         |> Plug.Conn.halt()
 
       grant_for_guard ->

@@ -8,12 +8,12 @@ defmodule Shopifex.Plug.PaymentGuardTest do
 
   setup [:shop_in_session]
 
-  test "payment guard blocks pay-walled function and renders payment page", %{
+  test "payment guard blocks pay-walled function and redirects to payment page", %{
     conn: conn
   } do
     conn = Shopifex.Plug.PaymentGuard.call(conn, "block")
 
-    assert html_response(conn, 200) =~ "Components.WrappedShowPlans"
+    assert html_response(conn, 302) =~ "<html><body>You are being <a href=\"/payment/show-plans?guard_identifier=block"
   end
 
   test "payment guard grants access pay-walled function and places guard payment in session", %{

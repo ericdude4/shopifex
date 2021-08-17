@@ -49,19 +49,9 @@ defmodule Shopifex.PaymentGuard do
   """
   @callback get_plan(plan_id :: String.t() | pos_integer()) :: plan()
 
-  @doc """
-  Display the available payment plans for the user to select.
-  """
-  @callback show_plans(
-              conn :: Plug.Conn.t(),
-              guard_identifier :: String.t(),
-              redirect_after :: String.t()
-            ) :: Plug.Conn.t()
-
   @optional_callbacks grant_for_guard: 2,
                       use_grant: 2,
                       get_plan: 1,
-                      show_plans: 3,
                       create_grant: 3
 
   defmacro __using__(_opts) do
@@ -117,17 +107,6 @@ defmodule Shopifex.PaymentGuard do
            do: Changeset.change(grant_changeset, %{remaining_usages: remaining_usages - 1})
 
       @impl Shopifex.PaymentGuard
-      def show_plans(conn, guard_identifier, redirect_after) do
-        conn
-        |> put_view(ShopifexWeb.PaymentView)
-        |> put_layout({ShopifexWeb.LayoutView, "app.html"})
-        |> render("show-plans.html",
-          guard: guard_identifier,
-          redirect_after: redirect_after
-        )
-      end
-
-      @impl Shopifex.PaymentGuard
       def create_grant(shop, plan, charge_id) do
         Shopifex.Shops.create_grant(%{
           shop_id: shop.id,
@@ -138,7 +117,7 @@ defmodule Shopifex.PaymentGuard do
         })
       end
 
-      defoverridable grant_for_guard: 2, use_grant: 2, show_plans: 3, get_plan: 1, create_grant: 3
+      defoverridable grant_for_guard: 2, use_grant: 2, get_plan: 1, create_grant: 3
     end
   end
 end
