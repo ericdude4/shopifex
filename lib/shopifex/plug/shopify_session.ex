@@ -57,11 +57,7 @@ defmodule Shopifex.Plug.ShopifySession do
     Logger.info("Initiating shop installation for #{shop_url}")
 
     install_url =
-      "https://#{shop_url}/admin/oauth/authorize?client_id=#{
-        Application.fetch_env!(:shopifex, :api_key)
-      }&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{
-        Application.fetch_env!(:shopifex, :redirect_uri)
-      }"
+      "https://#{shop_url}/admin/oauth/authorize?client_id=#{Application.fetch_env!(:shopifex, :api_key)}&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{Application.fetch_env!(:shopifex, :redirect_uri)}"
 
     conn
     |> redirect(external: install_url)

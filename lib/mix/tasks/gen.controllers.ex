@@ -13,9 +13,9 @@ defmodule Mix.Tasks.Shopifex.Gen.Controllers do
 
   alias Mix.{Shopifex, Shopifex.Controller}
 
-  @switches     [context_app: :string, namespace: :string]
-  @default_opts [ namespace: "shopify"]
-  @mix_task     "shopifex.gen.controllers"
+  @switches [context_app: :string, namespace: :string]
+  @default_opts [namespace: "shopify"]
+  @mix_task "shopifex.gen.controllers"
 
   @impl true
   def run(args) do
@@ -30,7 +30,7 @@ defmodule Mix.Tasks.Shopifex.Gen.Controllers do
   defp parse({config, _parsed, _invalid}), do: config
 
   defp create_controller_files(%{namespace: namespace} = config) do
-   context_app = Map.get(config, :context_app) || Shopifex.otp_app()
+    context_app = Map.get(config, :context_app) || Shopifex.otp_app()
 
     Controller.create_controller_files(context_app, namespace, [])
   end

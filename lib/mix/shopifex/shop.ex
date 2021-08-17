@@ -8,7 +8,7 @@ defmodule Mix.Shopifex.Shop do
 
   def assocs(),
     do: [
-       {:has_many, :grants, :grants}
+      {:has_many, :grants, :grants}
     ]
 
   def indexes(),

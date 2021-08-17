@@ -14,9 +14,9 @@ defmodule Mix.Tasks.Shopifex.Gen.Schemas do
 
   alias Mix.{Shopifex, Shopifex.Schema}
 
-  @switches     [binary_id: :boolean, context_app: :string, namespace: :string]
+  @switches [binary_id: :boolean, context_app: :string, namespace: :string]
   @default_opts [binary_id: false, namespace: "shopify"]
-  @mix_task     "shopifex.gen.schemas"
+  @mix_task "shopifex.gen.schemas"
 
   @impl true
   def run(args) do
@@ -31,7 +31,7 @@ defmodule Mix.Tasks.Shopifex.Gen.Schemas do
   defp parse({config, _parsed, _invalid}), do: config
 
   defp create_schema_files(%{binary_id: binary_id, namespace: namespace} = config) do
-   context_app = Map.get(config, :context_app) || Shopifex.otp_app()
+    context_app = Map.get(config, :context_app) || Shopifex.otp_app()
 
     Schema.create_schema_files(context_app, namespace, binary_id: binary_id)
   end

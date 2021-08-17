@@ -17,7 +17,6 @@ defmodule ShopifexWeb.PaymentController do
   ```
   """
 
-
   @doc """
   Display the available payment plans for the user to select.
   """
