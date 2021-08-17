@@ -22,7 +22,7 @@ defmodule Shopifex.Plug.PaymentGuard do
   require Logger
 
   @router_helpers Module.concat([
-                    Application.compile_env!(:shopifex, :web_module),
+                    Application.compile_env(:shopifex, :web_module, ShopifexWeb),
                     Router,
                     Helpers
                   ])
