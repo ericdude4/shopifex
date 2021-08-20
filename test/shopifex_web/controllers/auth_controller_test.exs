@@ -25,7 +25,7 @@ defmodule ShopifexWeb.AuthControllerTest do
     [location] = Plug.Conn.get_resp_header(conn, "location")
 
     assert location ==
-             "https://shopifex.myshopify.com/admin/oauth/authorize?client_id=thisisafakeapikey&scope=read_inventory&redirect_uri=https://shopifex-dummy.com/auth/install"
+             "https://shopifex.myshopify.com/admin/oauth/authorize?client_id=thisisafakeapikey&scope=orders&redirect_uri=https://shopifex-dummy.com/auth/install"
 
     assert conn.status == 302
   end
