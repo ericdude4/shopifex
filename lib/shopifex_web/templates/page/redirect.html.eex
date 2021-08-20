@@ -1,0 +1,10 @@
+<%=
+    ReactPhoenix.ClientSide.react_component(
+        "Components.WrappedRedirect",
+        %{
+            shop_url: Shopifex.Plug.current_shop(@conn).url,
+            redirect_location: @redirect_location,
+            shopify_api_key: Application.get_env(:shopifex, :api_key)
+        }
+    )
+%>

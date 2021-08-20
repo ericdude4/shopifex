@@ -7,14 +7,16 @@ import enTranslations from '@shopify/polaris/locales/en.json'
 import '@shopify/polaris/styles.css'
 
 import ShowPlans from './components/show-plans'
+import ExternalRedirect from './components/external-redirect'
+
 function WrappedShowPlans(props) {
   return (
     <AppProvider i18n={enTranslations}>
-      <ShowPlans 
-        plans={props.plans} 
-        guard={props.guard} 
-        shopUrl={props.shop_url} 
-        redirectAfter={props.redirect_after} 
+      <ShowPlans
+        plans={props.plans}
+        guard={props.guard}
+        shopUrl={props.shop_url}
+        redirectAfter={props.redirect_after}
         shopifyApiKey={props.shopify_api_key}
         sessionToken={props.session_token}
       />
@@ -22,6 +24,17 @@ function WrappedShowPlans(props) {
   )
 }
 
+function WrappedRedirect({
+  shop_url, shopify_api_key, redirect_location
+}) {
+  return (
+    <AppProvider i18n={enTranslations}>
+      <ExternalRedirect shopUrl={shop_url} shopifyApiKey={shopify_api_key} redirectLocation={redirect_location} />
+    </AppProvider>
+  );
+}
+
 window.Components = {
-  WrappedShowPlans
+  WrappedShowPlans,
+  WrappedRedirect
 }

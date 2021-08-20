@@ -8,9 +8,10 @@ defmodule Shopifex.Plug.PaymentGuardTest do
 
   setup [:shop_in_session]
 
-  test "payment guard blocks pay-walled function and redirects to payment page with session token", %{
-    conn: conn
-  } do
+  test "payment guard blocks pay-walled function and redirects to payment page with session token",
+       %{
+         conn: conn
+       } do
     halted_conn = Shopifex.Plug.PaymentGuard.call(conn, "block")
 
     assert html_response(halted_conn, 302) =~
