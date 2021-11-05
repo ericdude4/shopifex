@@ -5,7 +5,7 @@ defmodule Shopifex.Guardian do
     secret_key: Application.get_env(:shopifex, :secret),
     allowed_algos: ["HS512", "HS256"]
 
-  def subject_for_token(%{url: url}, _claims), do: {:ok, url}
+  def subject_for_token(shop, _claims), do: {:ok, Shopifex.Shops.get_url(shop)}
 
   @doc """
   Since app bridge tokens are only short lived, we generate

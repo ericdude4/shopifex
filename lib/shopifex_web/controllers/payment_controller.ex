@@ -112,9 +112,10 @@ defmodule ShopifexWeb.PaymentController do
                  name: plan.name,
                  price: plan.price,
                  test: plan.test,
-                 return_url: "#{redirect_uri}?plan_id=#{plan.id}&shop=#{shop.url}"
+                 return_url:
+                   "#{redirect_uri}?plan_id=#{plan.id}&shop=#{Shopifex.Shops.get_url(shop)}"
                },
-               url: "https://#{shop.url}/admin/api/2021-04/graphql.json",
+               url: "https://#{Shopifex.Shops.get_url(shop)}/admin/api/2021-04/graphql.json",
                headers: [
                  "X-Shopify-Access-Token": shop.access_token,
                  "Content-Type": "application/json"
@@ -140,12 +141,13 @@ defmodule ShopifexWeb.PaymentController do
               name: plan.name,
               price: plan.price,
               test: plan.test,
-              return_url: "#{redirect_uri}?plan_id=#{plan.id}&shop=#{shop.url}"
+              return_url:
+                "#{redirect_uri}?plan_id=#{plan.id}&shop=#{Shopifex.Shops.get_url(shop)}"
             }
           })
 
         case HTTPoison.post(
-               "https://#{shop.url}/admin/api/2021-01/recurring_application_charges.json",
+               "https://#{Shopifex.Shops.get_url(shop)}/admin/api/2021-01/recurring_application_charges.json",
                body,
                "X-Shopify-Access-Token": shop.access_token,
                "Content-Type": "application/json"
@@ -164,12 +166,13 @@ defmodule ShopifexWeb.PaymentController do
               name: plan.name,
               price: plan.price,
               test: plan.test,
-              return_url: "#{redirect_uri}?plan_id=#{plan.id}&shop=#{shop.url}"
+              return_url:
+                "#{redirect_uri}?plan_id=#{plan.id}&shop=#{Shopifex.Shops.get_url(shop)}"
             }
           })
 
         case HTTPoison.post(
-               "https://#{shop.url}/admin/api/2021-01/application_charges.json",
+               "https://#{Shopifex.Shops.get_url(shop)}/admin/api/2021-01/application_charges.json",
                body,
                "X-Shopify-Access-Token": shop.access_token,
                "Content-Type": "application/json"
@@ -222,7 +225,11 @@ defmodule ShopifexWeb.PaymentController do
       @impl ShopifexWeb.PaymentController
       def after_payment(conn, shop, _plan, _grant, redirect_after) do
         api_key = Application.get_env(:shopifex, :api_key)
-        redirect(conn, external: "https://#{shop.url}/admin/apps/#{api_key}#{redirect_after}")
+
+        redirect(conn,
+          external:
+            "https://#{Shopifex.Shops.get_url(shop)}/admin/apps/#{api_key}#{redirect_after}"
+        )
       end
 
       defoverridable render_plans: 3, after_payment: 5

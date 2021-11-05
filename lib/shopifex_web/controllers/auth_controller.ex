@@ -112,7 +112,7 @@ defmodule ShopifexWeb.AuthController do
       def after_install(conn, shop) do
         redirect(conn,
           external:
-            "https://#{shop.url}/admin/apps/#{Application.fetch_env!(:shopifex, :api_key)}"
+            "https://#{Shopifex.Shops.get_url(shop)}/admin/apps/#{Application.fetch_env!(:shopifex, :api_key)}"
         )
       end
 
