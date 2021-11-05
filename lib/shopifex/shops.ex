@@ -15,10 +15,43 @@ defmodule Shopifex.Shops do
   def repo, do: Application.fetch_env!(:shopifex, :repo)
 
   def get_shop_by_url(url) do
-    from(s in shop_schema(),
-      where: s.url == ^url
-    )
+    url_field = get_url_field()
+
+    filters = get_filters()
+
+    shop_schema()
+    |> where(^[{url_field, url}])
+    |> add_additional_filters(filters)
     |> repo().one()
+  end
+
+  def get_url(shop) do
+    Map.get(shop, get_url_field())
+  end
+
+  defp get_url_field() do
+    # TODO: dont check for defaults in v3.0
+    if Keyword.has_key?(shop_schema().__info__(:functions), :shopifex_url_field) do
+      shop_schema().shopifex_url_field()
+    else
+      :url
+    end
+  end
+
+  defp get_filters() do
+    # TODO: dont check for defaults in v3.0
+    if Keyword.has_key?(shop_schema().__info__(:functions), :shopifex_filters) do
+      shop_schema().shopifex_filters()
+    else
+      []
+    end
+  end
+
+  defp add_additional_filters(query, filter_keys) do
+    Enum.reduce(filter_keys, query, fn
+      {key, nil}, acc -> from(x in acc, where: is_nil(field(x, ^key)))
+      {key, value}, acc -> where(acc, ^[{key, value}])
+    end)
   end
 
   def create_shop(params) do
@@ -51,7 +84,7 @@ defmodule Shopifex.Shops do
       current_webhook_topics = Enum.map(current_webhooks, & &1.topic)
 
       Logger.info(
-        "All current webhook topics for #{shop.url}: #{Enum.join(current_webhook_topics, ", ")}"
+        "All current webhook topics for #{Shopifex.Shops.get_url(shop)}: #{Enum.join(current_webhook_topics, ", ")}"
       )
 
       current_webhook_topics = MapSet.new(current_webhook_topics)
@@ -85,7 +118,7 @@ defmodule Shopifex.Shops do
   @spec get_current_webhooks(shop :: shop()) :: {:ok, list()} | any()
   def get_current_webhooks(shop) do
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
-           HTTPoison.get("https://#{shop.url}/admin/webhooks.json",
+           HTTPoison.get("https://#{Shopifex.Shops.get_url(shop)}/admin/webhooks.json",
              "X-Shopify-Access-Token": shop.access_token,
              "Content-Type": "application/json"
            ),
@@ -97,7 +130,7 @@ defmodule Shopifex.Shops do
   defp create_webhook(shop, topic) do
     with {:ok, %HTTPoison.Response{status_code: 201, body: body}} <-
            HTTPoison.post(
-             "https://#{shop.url}/admin/webhooks.json",
+             "https://#{Shopifex.Shops.get_url(shop)}/admin/webhooks.json",
              Jason.encode!(%{
                webhook: %{
                  topic: topic,
@@ -115,7 +148,7 @@ defmodule Shopifex.Shops do
 
   def delete_webhook(shop, id) do
     HTTPoison.delete(
-      "https://#{shop.url}/admin/webhooks/#{id}.json",
+      "https://#{Shopifex.Shops.get_url(shop)}/admin/webhooks/#{id}.json",
       "X-Shopify-Access-Token": shop.access_token,
       "Content-Type": "application/json"
     )

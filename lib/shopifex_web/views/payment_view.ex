@@ -12,6 +12,6 @@ defmodule ShopifexWeb.PaymentView do
   def shop_url(%Plug.Conn{} = conn) do
     conn
     |> Shopifex.Plug.current_shop()
-    |> Map.get(:url)
+    |> Shopifex.Shops.get_url()
   end
 end
