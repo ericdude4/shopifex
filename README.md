@@ -14,7 +14,7 @@ by adding `shopifex` to your list of dependencies in `mix.exs`: (note, OTP 22 or
 ```elixir
 def deps do
   [
-    {:shopifex, "~> 2.0"}
+    {:shopifex, "~> 2.1"}
   ]
 end
 ```

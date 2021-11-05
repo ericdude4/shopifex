@@ -10,7 +10,7 @@ defmodule Shopifex do
   ```elixir
   def deps do
   [
-    {:shopifex, "~> 1.0"}
+    {:shopifex, "~> 2.1"}
   ]
   end
   ```
