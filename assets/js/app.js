@@ -1,7 +1,5 @@
-import "react-phoenix"
-
 import React from 'react'
-// import ReactDOM from 'react-dom'
+import ReactDOM from 'react-dom'
 import { AppProvider } from '@shopify/polaris'
 import enTranslations from '@shopify/polaris/locales/en.json'
 import '@shopify/polaris/styles.css'
@@ -9,8 +7,8 @@ import '@shopify/polaris/styles.css'
 import ShowPlans from './components/show-plans'
 import ExternalRedirect from './components/external-redirect'
 
-function WrappedShowPlans(props) {
-  return (
+window.WrappedShowPlans = (props) => {
+  return ReactDOM.render(
     <AppProvider i18n={enTranslations}>
       <ShowPlans
         plans={props.plans}
@@ -20,21 +18,18 @@ function WrappedShowPlans(props) {
         shopifyApiKey={props.shopify_api_key}
         sessionToken={props.session_token}
       />
-    </AppProvider>
+    </AppProvider>,
+    document.getElementById("root")
   )
 }
 
-function WrappedRedirect({
+window.WrappedRedirect = ({
   shop_url, shopify_api_key, redirect_location
-}) {
-  return (
+}) => {
+  return ReactDOM.render(
     <AppProvider i18n={enTranslations}>
       <ExternalRedirect shopUrl={shop_url} shopifyApiKey={shopify_api_key} redirectLocation={redirect_location} />
-    </AppProvider>
+    </AppProvider>,
+    document.getElementById("root")
   );
-}
-
-window.Components = {
-  WrappedShowPlans,
-  WrappedRedirect
 }

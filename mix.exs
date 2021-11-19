@@ -4,7 +4,7 @@ defmodule Shopifex.MixProject do
   def project do
     [
       app: :shopifex,
-      version: "2.1.0",
+      version: "2.1.1",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       compilers: [:phoenix, :gettext] ++ Mix.compilers(),
@@ -59,7 +59,6 @@ defmodule Shopifex.MixProject do
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:ex_doc, "~> 0.14", only: :dev, runtime: false},
-      {:react_phoenix, "~> 1.2"},
       {:guardian, "~> 2.0"},
       {:neuron, "~> 5.0.0"},
       {:cors_plug, "~> 2.0"},

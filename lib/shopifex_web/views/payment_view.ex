@@ -7,6 +7,7 @@ defmodule ShopifexWeb.PaymentView do
     |> Enum.map(fn guard ->
       Map.take(guard, [:id, :features, :grants, :name, :price, :type, :usages])
     end)
+    |> Jason.encode!()
   end
 
   def shop_url(%Plug.Conn{} = conn) do

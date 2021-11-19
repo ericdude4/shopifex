@@ -1,13 +1,16 @@
-<%=
-    ReactPhoenix.ClientSide.react_component(
-        "Components.WrappedShowPlans",
-        %{
-            guard: @guard,
-            plans: available_plans(@guard),
-            shop_url: shop_url(@conn),
-            redirect_after: @redirect_after,
-            shopify_api_key: Application.get_env(:shopifex, :api_key),
-            session_token: Shopifex.Plug.session_token(@conn)
+<div id="root"></div>
+
+<script>
+document.addEventListener("DOMContentLoaded", e => {
+    window.WrappedShowPlans(
+        {
+            guard: "<%= @guard %>",
+            plans: <%= raw(available_plans(@guard)) %>,
+            redirect_after: "<%= @redirect_after %>",
+            shop_url: "<%= shop_url(@conn) %>",
+            shopify_api_key: "<%= Application.get_env(:shopifex, :api_key) %>",
+            session_token: "<%= Shopifex.Plug.session_token(@conn) %>"
         }
     )
-%>
+})
+</script>

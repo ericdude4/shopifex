@@ -56,7 +56,6 @@ defmodule ShopifexWeb do
       import ShopifexWeb.ErrorHelpers
       import ShopifexWeb.Gettext
       alias unquote(web_module).Router.Helpers, as: Routes
-      import ReactPhoenix.ClientSide
     end
   end
 
