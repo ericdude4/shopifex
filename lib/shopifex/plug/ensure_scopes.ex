@@ -18,7 +18,7 @@ defmodule Shopifex.Plug.EnsureScopes do
     options
   end
 
-  def call(conn, _) do
+  def call(conn, opts \\ []) do
     case Shopifex.Plug.current_shop(conn) do
       nil ->
         raise(
@@ -29,7 +29,14 @@ defmodule Shopifex.Plug.EnsureScopes do
         )
 
       shop ->
-        required_scopes = String.split(Application.get_env(:shopifex, :scopes), ",")
+        required_scopes =
+          if Keyword.has_key?(opts, :required_scopes) do
+            Keyword.get(opts, :required_scopes, "")
+          else
+            Application.get_env(:shopifex, :scopes, "")
+          end
+          |> String.split(",")
+
         shop_scopes = String.split(shop.scope, ",")
 
         case required_scopes -- shop_scopes do

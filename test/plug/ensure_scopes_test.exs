@@ -22,12 +22,10 @@ defmodule Shopifex.Plug.EnsureScopesTest do
   test "renders redirect page with location to Shopify OAuth update flow", %{
     conn: conn
   } do
-    Application.put_env(:shopifex, :scopes, "read_orders")
-
-    conn = Shopifex.Plug.EnsureScopes.call(conn, [])
+    conn = Shopifex.Plug.EnsureScopes.call(conn, required_scopes: "read_orders")
 
     assert conn.halted
-    assert html_response(conn, 200) =~ "Components.WrappedRedirect"
+    assert html_response(conn, 200) =~ "WrappedRedirect"
 
     assert conn.assigns.redirect_location =~
              "https://shopifex.myshopify.com/admin/oauth/authorize?client_id=thisisafakeapikey"

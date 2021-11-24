@@ -22,7 +22,7 @@ defmodule Shopifex.Plug.PaymentGuardTest do
     conn_follow_redirect = get(Phoenix.ConnTest.build_conn(), redirect_location)
 
     assert Shopifex.Plug.session_token(conn_follow_redirect)
-    assert html_response(conn_follow_redirect, 200) =~ "Components.WrappedShowPlans"
+    assert html_response(conn_follow_redirect, 200) =~ "WrappedShowPlans"
   end
 
   test "payment guard grants access pay-walled function and places guard payment in session", %{
