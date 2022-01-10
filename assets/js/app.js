@@ -2,7 +2,7 @@ import React from 'react'
 import ReactDOM from 'react-dom'
 import { AppProvider } from '@shopify/polaris'
 import enTranslations from '@shopify/polaris/locales/en.json'
-import '@shopify/polaris/styles.css'
+import '@shopify/polaris/build/esm/styles.css'
 
 import ShowPlans from './components/show-plans'
 import ExternalRedirect from './components/external-redirect'
@@ -17,6 +17,7 @@ window.WrappedShowPlans = (props) => {
         redirectAfter={props.redirect_after}
         shopifyApiKey={props.shopify_api_key}
         sessionToken={props.session_token}
+        planSelectRoute={props.plan_select_route}
       />
     </AppProvider>,
     document.getElementById("root")

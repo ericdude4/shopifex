@@ -8,6 +8,7 @@ document.addEventListener("DOMContentLoaded", e => {
             plans: <%= raw(available_plans(@guard)) %>,
             redirect_after: "<%= @redirect_after %>",
             shop_url: "<%= shop_url(@conn) %>",
+            plan_select_route: "<%= Application.get_env(:shopifex, :path_prefix, "") %>/payment/select-plan",
             shopify_api_key: "<%= Application.get_env(:shopifex, :api_key) %>",
             session_token: "<%= Shopifex.Plug.session_token(@conn) %>"
         }

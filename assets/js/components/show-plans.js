@@ -23,7 +23,7 @@ export default class ShowPlans extends React.Component {
     selectPlan(plan) {
         axios.post
             (
-                "/payment/select-plan",
+                this.props.planSelectRoute,
                 {
                     plan_id: plan.id,
                     redirect_after: this.props.redirectAfter,
@@ -45,7 +45,7 @@ export default class ShowPlans extends React.Component {
                 features.push(<List.Item key={"card" + i + "list" + j}>{feature}</List.Item>)
             }
             cards.push(
-                <Layout.Section oneThird key={"card" + i}>
+                <div style={{ width: '250px', marginRight: '10px' }} key={"card" + i}>
                     <Card
                         title={`${plan.name}`}
                         primaryFooterAction={{
@@ -64,16 +64,19 @@ export default class ShowPlans extends React.Component {
                             </List>
                         </Card.Section>
                     </Card>
-                </Layout.Section>
+                </div>
             )
         }
         return <Page
             fullWidth
             title="Payment options"
         >
-            <Layout>
-                {cards}
-            </Layout>
+            <p>Select a plan to continue</p>
+            <div style={{ padding: '20px' }}>
+                <div style={{ display: 'flex', maxWidth: "100%" }}>
+                    {cards}
+                </div>
+            </div>
         </Page>;
     }
 }
