@@ -206,7 +206,7 @@ Generate the schemas
 
 `mix phx.gen.schema Shops.Plan plans name:string price:string features:array:string grants:array:string test:boolean usages:integer type:string`
 
-`mix phx.gen.schema Shops.Grant grants shop:references:shops charge_id:integer grants:array:string remaining_usages:integer total_usages:integer`
+`mix phx.gen.schema Shops.Grant grants shop_id:references:shops charge_id:integer grants:array:string remaining_usages:integer total_usages:integer`
 
 Add the config options:
 ```elixir
