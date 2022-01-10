@@ -48,6 +48,21 @@ defmodule ShopifexWeb.Routes do
         plug(Guardian.Plug.EnsureAuthenticated)
         plug(Guardian.Plug.LoadResource)
       end
+
+      pipeline :shopifex_api do
+        plug(CORSPlug, origin: "*")
+        plug(:accepts, ["json"])
+
+        plug(
+          Guardian.Plug.Pipeline,
+          module: Shopifex.Guardian,
+          error_handler: ShopifexWeb.AuthErrorHandler
+        )
+
+        plug(Guardian.Plug.VerifyHeader)
+        plug(Guardian.Plug.EnsureAuthenticated)
+        plug(Guardian.Plug.LoadResource)
+      end
     end
   end
 
