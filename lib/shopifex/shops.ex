@@ -18,10 +18,12 @@ defmodule Shopifex.Shops do
     url_field = get_url_field()
 
     filters = get_filters()
+    preloads = get_preloads()
 
     shop_schema()
     |> where(^[{url_field, url}])
     |> add_additional_filters(filters)
+    |> preload(^preloads)
     |> repo().one()
   end
 
@@ -42,6 +44,15 @@ defmodule Shopifex.Shops do
     # TODO: dont check for defaults in v3.0
     if Keyword.has_key?(shop_schema().__info__(:functions), :shopifex_filters) do
       shop_schema().shopifex_filters()
+    else
+      []
+    end
+  end
+
+  defp get_preloads() do
+    # TODO: dont check for defaults in v3.0
+    if Keyword.has_key?(shop_schema().__info__(:functions), :shopifex_preloads) do
+      shop_schema().shopifex_preloads()
     else
       []
     end
