@@ -41,19 +41,15 @@ defmodule ShopifexWeb.WebhookController do
   """
   defmacro __using__(_opts) do
     quote do
-      def action(conn, _) do
+      plug(:assign_shopify_topic)
+
+      defp assign_shopify_topic(conn, _) do
         [topic] = Plug.Conn.get_req_header(conn, "x-shopify-topic")
-        [shop_url] = Plug.Conn.get_req_header(conn, "x-shopify-shop-domain")
-
-        case Shopifex.Shops.get_shop_by_url(shop_url) do
-          nil ->
-            conn
-            |> send_resp(200, "success")
-
-          shop ->
-            handle_topic(conn, shop, topic)
-        end
+        Plug.Conn.assign(conn, :shopify_topic, topic)
       end
+
+      def action(conn, _),
+        do: handle_topic(conn, Shopifex.Plug.current_shop(conn), conn.assigns[:shopify_topic])
     end
   end
 end
