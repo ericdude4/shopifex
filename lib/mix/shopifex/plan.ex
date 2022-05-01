@@ -6,6 +6,7 @@ defmodule Mix.Shopifex.Plan do
       {:features, {:array, :string}, null: false},
       {:grants, {:array, :string}, null: false},
       {:test, :boolean, default: false},
+      {:trial_days, :integer, default: 0},
       {:usages, :integer, null: true},
       {:type, :string, null: false}
     ]

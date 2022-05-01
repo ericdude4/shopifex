@@ -96,7 +96,7 @@ defmodule ShopifexWeb.PaymentController do
         case Neuron.query(
                """
                mutation appSubscriptionCreate($name: String!, $return_url: URL!, $test: Boolean!, $price: Decimal!) {
-                 appSubscriptionCreate(name: $name, returnUrl: $return_url, test: $test, lineItems: [{plan: {appRecurringPricingDetails: {price: {amount: $price, currencyCode: USD}, interval: ANNUAL}}}]) {
+                 appSubscriptionCreate(name: $name, returnUrl: $return_url, test: $test, trialDays: $trial_days, lineItems: [{plan: {appRecurringPricingDetails: {price: {amount: $price, currencyCode: USD}, interval: ANNUAL}}}]) {
                    appSubscription {
                      id
                    }
@@ -112,6 +112,7 @@ defmodule ShopifexWeb.PaymentController do
                  name: plan.name,
                  price: plan.price,
                  test: plan.test,
+                 trial_days: Map.get(plan, :trial_days, 0),
                  return_url:
                    "#{redirect_uri}?plan_id=#{plan.id}&shop=#{Shopifex.Shops.get_url(shop)}"
                },
@@ -141,6 +142,7 @@ defmodule ShopifexWeb.PaymentController do
               name: plan.name,
               price: plan.price,
               test: plan.test,
+              trial_days: Map.get(plan, :trial_days, 0),
               return_url:
                 "#{redirect_uri}?plan_id=#{plan.id}&shop=#{Shopifex.Shops.get_url(shop)}"
             }
