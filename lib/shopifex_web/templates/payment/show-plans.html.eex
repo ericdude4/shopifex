@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", e => {
     window.WrappedShowPlans(
         {
             guard: "<%= @guard %>",
-            plans: <%= raw(available_plans(@guard)) %>,
+            plans: <%= raw(available_plans(Shopifex.Plug.current_shop(@conn), @guard)) %>,
             redirect_after: "<%= @redirect_after %>",
             shop_url: "<%= shop_url(@conn) %>",
             plan_select_route: "<%= Application.get_env(:shopifex, :path_prefix, "") %>/payment/select-plan",

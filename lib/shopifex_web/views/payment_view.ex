@@ -1,9 +1,11 @@
 defmodule ShopifexWeb.PaymentView do
   use ShopifexWeb, :view
 
-  def available_plans(guard) do
-    guard
-    |> Shopifex.Shops.list_plans_granting_guard()
+  @payment_guard Application.compile_env(:shopifex, :payment_guard)
+
+  def available_plans(shop, guard) do
+    shop
+    |> @payment_guard.list_available_plans_for_guard(guard)
     |> Enum.map(fn guard ->
       Map.take(guard, [:id, :features, :grants, :name, :price, :type, :usages])
     end)

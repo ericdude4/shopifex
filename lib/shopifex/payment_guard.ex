@@ -49,10 +49,16 @@ defmodule Shopifex.PaymentGuard do
   """
   @callback get_plan(plan_id :: String.t() | pos_integer()) :: plan()
 
+  @doc """
+  Get a list of plans for shop based on provided guard
+  """
+  @callback list_available_plans_for_guard(shop :: shop(), guard :: guard()) :: [plan()]
+
   @optional_callbacks grant_for_guard: 2,
                       use_grant: 2,
                       get_plan: 1,
-                      create_grant: 3
+                      create_grant: 3,
+                      list_available_plans_for_guard: 2
 
   defmacro __using__(_opts) do
     quote do
@@ -80,6 +86,11 @@ defmodule Shopifex.PaymentGuard do
       @impl Shopifex.PaymentGuard
       def get_plan(plan_id) do
         Shopifex.Shops.get_plan!(plan_id)
+      end
+
+      @impl Shopifex.PaymentGuard
+      def list_available_plans_for_guard(shop, guard) do
+        Shopifex.Shops.list_plans_granting_guard(guard)
       end
 
       @impl Shopifex.PaymentGuard
@@ -117,7 +128,11 @@ defmodule Shopifex.PaymentGuard do
         })
       end
 
-      defoverridable grant_for_guard: 2, use_grant: 2, get_plan: 1, create_grant: 3
+      defoverridable grant_for_guard: 2,
+                     use_grant: 2,
+                     get_plan: 1,
+                     create_grant: 3,
+                     list_available_plans_for_guard: 2
     end
   end
 end
