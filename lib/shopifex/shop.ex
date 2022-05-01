@@ -26,16 +26,19 @@ defmodule Shopifex.Shop do
   ```
   """
   @default_url_field :url
+  @default_scope_field :scope
   @default_filter_keys []
   @default_preloads []
 
   defmacro __using__(opts \\ []) do
     url_key = Keyword.get(opts, :url_field, @default_url_field)
+    scope_key = Keyword.get(opts, :scope_field, @default_scope_field)
     filters = Keyword.get(opts, :filters, @default_filter_keys)
     preloads = Keyword.get(opts, :preloads, @default_preloads)
 
     quote do
       def shopifex_url_field(), do: unquote(url_key)
+      def shopifex_scope_field(), do: unquote(scope_key)
       def shopifex_filters(), do: unquote(filters)
       def shopifex_preloads(), do: unquote(preloads)
     end

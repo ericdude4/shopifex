@@ -37,7 +37,10 @@ defmodule Shopifex.Plug.EnsureScopes do
           end
           |> String.split(",")
 
-        shop_scopes = String.split(shop.scope, ",")
+        shop_scopes =
+          shop
+          |> Shopifex.Shops.get_scope()
+          |> String.split(",")
 
         case required_scopes -- shop_scopes do
           [] ->

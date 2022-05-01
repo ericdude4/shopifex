@@ -31,12 +31,25 @@ defmodule Shopifex.Shops do
     Map.get(shop, get_url_field())
   end
 
+  def get_scope(shop) do
+    Map.get(shop, get_scope_field())
+  end
+
   defp get_url_field() do
     # TODO: dont check for defaults in v3.0
     if Keyword.has_key?(shop_schema().__info__(:functions), :shopifex_url_field) do
       shop_schema().shopifex_url_field()
     else
       :url
+    end
+  end
+
+  defp get_scope_field() do
+    # TODO: dont check for defaults in v3.0
+    if Keyword.has_key?(shop_schema().__info__(:functions), :shopifex_scope_field) do
+      shop_schema().shopifex_scope_field()
+    else
+      :scope
     end
   end
 
