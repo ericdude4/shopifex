@@ -73,8 +73,14 @@ defmodule Shopifex.Shops do
 
   defp add_additional_filters(query, filter_keys) do
     Enum.reduce(filter_keys, query, fn
-      {key, nil}, acc -> from(x in acc, where: is_nil(field(x, ^key)))
-      {key, value}, acc -> where(acc, ^[{key, value}])
+      {key, nil}, acc ->
+        from(x in acc, where: is_nil(field(x, ^key)))
+
+      {key, [in: values]}, acc ->
+        from(x in acc, where: field(x, ^key) in ^values)
+
+      {key, value}, acc ->
+        where(acc, ^[{key, value}])
     end)
   end
 
