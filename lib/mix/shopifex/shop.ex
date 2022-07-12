@@ -1,9 +1,9 @@
 defmodule Mix.Shopifex.Shop do
   def attrs(),
     do: [
-      {:url, :string, null: false},
-      {:access_token, :string, null: false},
-      {:scope, :string, null: false}
+      {:url, :string},
+      {:access_token, :string},
+      {:scope, :string}
     ]
 
   def assocs(),

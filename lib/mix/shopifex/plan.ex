@@ -1,14 +1,14 @@
 defmodule Mix.Shopifex.Plan do
   def attrs(),
     do: [
-      {:name, :string, null: false},
-      {:price, :string, null: false},
-      {:features, {:array, :string}, null: false},
-      {:grants, {:array, :string}, null: false},
+      {:name, :string},
+      {:price, :string},
+      {:features, {:array, :string}},
+      {:grants, {:array, :string}},
       {:test, :boolean, default: false},
       {:trial_days, :integer, default: 0},
-      {:usages, :integer, null: true},
-      {:type, :string, null: false}
+      {:usages, :integer},
+      {:type, :string}
     ]
 
   def assocs(),
