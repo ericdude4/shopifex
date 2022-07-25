@@ -44,7 +44,7 @@ defmodule Shopifex.Shops do
     end
   end
 
-  defp get_scope_field() do
+  def get_scope_field() do
     # TODO: dont check for defaults in v3.0
     if Keyword.has_key?(shop_schema().__info__(:functions), :shopifex_scope_field) do
       shop_schema().shopifex_scope_field()

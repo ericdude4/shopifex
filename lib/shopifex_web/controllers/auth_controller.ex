@@ -23,14 +23,30 @@ defmodule ShopifexWeb.AuthController do
   ## Example
 
       @impl true
-      def after_install(conn, shop) do
+      def after_install(conn, shop, oauth_state) do
         # send yourself an e-mail about shop installation
 
         # follow default behaviour.
-        super(conn, shop)
+        super(conn, shop, oauth_state)
       end
   """
-  @callback after_install(Plug.Conn.t(), shop()) :: Plug.Conn.t()
+  @callback after_install(Plug.Conn.t(), shop(), oauth_state :: String.t()) :: Plug.Conn.t()
+
+  @doc """
+  An optional callback called after the oauth update is completed. By default,
+  this function redirects the user to the app within their Shopify admin panel.
+
+  ## Example
+
+      @impl true
+      def after_update(conn, shop, oauth_state) do
+        # do some work related to oauth_state
+
+        # follow default behaviour.
+        super(conn, shop, oauth_state)
+      end
+  """
+  @callback after_update(Plug.Conn.t(), shop(), oauth_state :: String.t()) :: Plug.Conn.t()
 
   @doc """
   An optional callback which is called after the shop data has been retrieved from
@@ -61,7 +77,7 @@ defmodule ShopifexWeb.AuthController do
   """
   @callback auth(conn :: Plug.Conn.t(), params :: Plug.Conn.params()) :: Plug.Conn.t()
 
-  @optional_callbacks after_install: 2, insert_shop: 1, auth: 2
+  @optional_callbacks after_install: 3, after_update: 3, insert_shop: 1, auth: 2
 
   defmacro __using__(_opts) do
     quote do
@@ -77,7 +93,7 @@ defmodule ShopifexWeb.AuthController do
         |> redirect(to: path_prefix <> "/?token=" <> Guardian.Plug.current_token(conn))
       end
 
-      def initialize_installation(conn, %{"shop" => shop_url}) do
+      def initialize_installation(conn, %{"shop" => shop_url} = params) do
         if Regex.match?(~r/^.*\.myshopify\.com/, shop_url) do
           # check if store is in the system already:
           case Shopifex.Shops.get_shop_by_url(shop_url) do
@@ -85,7 +101,7 @@ defmodule ShopifexWeb.AuthController do
               Logger.info("Initiating shop installation for #{shop_url}")
 
               install_url =
-                "https://#{shop_url}/admin/oauth/authorize?client_id=#{Application.fetch_env!(:shopifex, :api_key)}&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{Application.fetch_env!(:shopifex, :redirect_uri)}"
+                "https://#{shop_url}/admin/oauth/authorize?client_id=#{Application.fetch_env!(:shopifex, :api_key)}&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{Application.fetch_env!(:shopifex, :redirect_uri)}&state=#{params["state"]}"
 
               conn
               |> redirect(external: install_url)
@@ -94,7 +110,7 @@ defmodule ShopifexWeb.AuthController do
               Logger.info("Initiating shop reinstallation for #{shop_url}")
 
               reinstall_url =
-                "https://#{shop_url}/admin/oauth/authorize?client_id=#{Application.fetch_env!(:shopifex, :api_key)}&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{Application.fetch_env!(:shopifex, :reinstall_uri)}"
+                "https://#{shop_url}/admin/oauth/authorize?client_id=#{Application.fetch_env!(:shopifex, :api_key)}&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{Application.fetch_env!(:shopifex, :reinstall_uri)}&state=#{params["state"]}"
 
               conn
               |> redirect(external: reinstall_url)
@@ -109,7 +125,7 @@ defmodule ShopifexWeb.AuthController do
       end
 
       @impl ShopifexWeb.AuthController
-      def after_install(conn, shop) do
+      def after_install(conn, shop, _state) do
         redirect(conn,
           external:
             "https://#{Shopifex.Shops.get_url(shop)}/admin/apps/#{Application.fetch_env!(:shopifex, :api_key)}"
@@ -121,7 +137,7 @@ defmodule ShopifexWeb.AuthController do
         Shopifex.Shops.create_shop(shop)
       end
 
-      def install(conn, %{"code" => code, "shop" => shop_url}) do
+      def install(conn, %{"code" => code, "shop" => shop_url, "state" => state}) do
         url = "https://#{shop_url}/admin/oauth/access_token"
 
         case(
@@ -137,21 +153,33 @@ defmodule ShopifexWeb.AuthController do
           )
         ) do
           {:ok, response} ->
-            shop =
-              Jason.decode!(response.body, keys: :atoms)
+            params =
+              response.body
+              |> Jason.decode!(keys: :atoms)
               |> Map.put(:url, shop_url)
-              |> insert_shop()
+
+            params = Map.put(params, Shopifex.Shops.get_scope_field(), params[:scope])
+
+            shop = insert_shop(params)
 
             Shopifex.Shops.configure_webhooks(shop)
 
-            after_install(conn, shop)
+            after_install(conn, shop, state)
 
           error ->
             raise(Shopifex.InstallError, message: "Installation failed for shop #{shop_url}")
         end
       end
 
-      def update(conn, %{"code" => code, "shop" => shop_url}) do
+      @impl ShopifexWeb.AuthController
+      def after_update(conn, shop, _state) do
+        redirect(conn,
+          external:
+            "https://#{Shopifex.Shops.get_url(shop)}/admin/apps/#{Application.fetch_env!(:shopifex, :api_key)}"
+        )
+      end
+
+      def update(conn, %{"code" => code, "shop" => shop_url, "state" => state}) do
         url = "https://#{shop_url}/admin/oauth/access_token"
 
         case(
@@ -169,23 +197,23 @@ defmodule ShopifexWeb.AuthController do
           {:ok, response} ->
             params = Jason.decode!(response.body, keys: :atoms)
 
+            params = Map.put(params, Shopifex.Shops.get_scope_field(), params[:scope])
+
             shop =
               shop_url
               |> Shopifex.Shops.get_shop_by_url()
               |> Shopifex.Shops.update_shop(params)
-              |> Shopifex.Shops.configure_webhooks()
 
-            redirect(conn,
-              external:
-                "https://#{shop_url}/admin/apps/#{Application.fetch_env!(:shopifex, :api_key)}"
-            )
+            Shopifex.Shops.configure_webhooks(shop)
+
+            after_update(conn, shop, state)
 
           error ->
             raise(Shopifex.UpdateError, message: "Update failed for shop #{shop_url}")
         end
       end
 
-      defoverridable after_install: 2, insert_shop: 1, auth: 2
+      defoverridable after_install: 3, after_update: 3, insert_shop: 1, auth: 2
     end
   end
 end
