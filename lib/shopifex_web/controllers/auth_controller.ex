@@ -179,7 +179,8 @@ defmodule ShopifexWeb.AuthController do
         )
       end
 
-      def update(conn, %{"code" => code, "shop" => shop_url, "state" => state}) do
+      def update(conn, %{"code" => code, "shop" => shop_url} = params) do
+        state = Map.get(params, "state", "")
         url = "https://#{shop_url}/admin/oauth/access_token"
 
         case(
