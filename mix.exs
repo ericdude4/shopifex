@@ -4,10 +4,10 @@ defmodule Shopifex.MixProject do
   def project do
     [
       app: :shopifex,
-      version: "2.1.5",
+      version: "2.1.6",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
-      compilers: [:phoenix, :gettext] ++ Mix.compilers(),
+      compilers: [:phoenix] ++ Mix.compilers(),
       deps: deps(),
       aliases: aliases(),
       elixirc_paths: elixirc_paths(Mix.env()),
