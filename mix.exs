@@ -4,7 +4,7 @@ defmodule Shopifex.MixProject do
   def project do
     [
       app: :shopifex,
-      version: "2.1.7",
+      version: "2.1.8",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
       compilers: [:phoenix] ++ Mix.compilers(),
