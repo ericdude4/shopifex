@@ -48,7 +48,13 @@ defmodule ShopifexWeb.PaymentController do
             ) ::
               Plug.Conn.t()
 
-  @optional_callbacks render_plans: 3, after_payment: 5
+  @doc """
+  Given a shop and plan, return boolean for whether the charge should be created as
+  a test charge.
+  """
+  @callback test_charge?(shop :: Ecto.Schema.t(), plan :: map()) :: boolean()
+
+  @optional_callbacks render_plans: 3, after_payment: 5, test_charge?: 2
 
   defmacro __using__(_opts) do
     quote do
@@ -89,6 +95,8 @@ defmodule ShopifexWeb.PaymentController do
         send_resp(conn, 200, Jason.encode!(charge))
       end
 
+      def test_charge?(_shop, %{test: test?} = _plan), do: test?
+
       # annual billing is only possible w/ the GraphQL API
       defp create_charge(shop, plan = %{type: "recurring_application_charge", annual: true}) do
         redirect_uri = Application.get_env(:shopifex, :payment_redirect_uri)
@@ -111,7 +119,7 @@ defmodule ShopifexWeb.PaymentController do
                %{
                  name: plan.name,
                  price: plan.price,
-                 test: plan.test,
+                 test: test_charge?(shop, plan),
                  trial_days: Map.get(plan, :trial_days, 0),
                  return_url:
                    "#{redirect_uri}?plan_id=#{plan.id}&shop=#{Shopifex.Shops.get_url(shop)}"
@@ -141,7 +149,7 @@ defmodule ShopifexWeb.PaymentController do
             recurring_application_charge: %{
               name: plan.name,
               price: plan.price,
-              test: plan.test,
+              test: test_charge?(shop, plan),
               trial_days: Map.get(plan, :trial_days, 0),
               return_url:
                 "#{redirect_uri}?plan_id=#{plan.id}&shop=#{Shopifex.Shops.get_url(shop)}"
@@ -167,7 +175,7 @@ defmodule ShopifexWeb.PaymentController do
             application_charge: %{
               name: plan.name,
               price: plan.price,
-              test: plan.test,
+              test: test_charge?(shop, plan),
               return_url:
                 "#{redirect_uri}?plan_id=#{plan.id}&shop=#{Shopifex.Shops.get_url(shop)}"
             }
@@ -234,7 +242,7 @@ defmodule ShopifexWeb.PaymentController do
         )
       end
 
-      defoverridable render_plans: 3, after_payment: 5
+      defoverridable render_plans: 3, after_payment: 5, test_charge?: 2
     end
   end
 end
