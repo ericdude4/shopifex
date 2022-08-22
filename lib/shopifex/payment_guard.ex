@@ -78,7 +78,8 @@ defmodule Shopifex.PaymentGuard do
           where: s.shop_id == ^shop.id,
           where: ^guard in s.grants,
           where: is_nil(s.remaining_usages),
-          or_where: s.remaining_usages > 0
+          or_where: s.remaining_usages > 0,
+          limit: 1
         )
         |> repo().one()
       end

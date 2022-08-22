@@ -137,7 +137,8 @@ defmodule ShopifexWeb.AuthController do
         Shopifex.Shops.create_shop(shop)
       end
 
-      def install(conn, %{"code" => code, "shop" => shop_url, "state" => state}) do
+      def install(conn, %{"code" => code, "shop" => shop_url} = params) do
+        state = Map.get(params, "state", "")
         url = "https://#{shop_url}/admin/oauth/access_token"
 
         case(
