@@ -99,8 +99,8 @@ defmodule Shopifex.Plug do
 
     query_string =
       conn.query_params
-      |> Map.drop([signature_param])
-      |> Enum.map(fn
+      |> Map.delete(signature_param)
+      |> Enum.map_join(query_string_joiner, fn
         {"ids", value} ->
           # This absolutely rediculous solution: https://community.shopify.com/c/Shopify-Apps/Hmac-Verification-for-Bulk-Actions/m-p/590611#M18504
           ids =
@@ -114,7 +114,6 @@ defmodule Shopifex.Plug do
         {key, value} ->
           "#{key}=#{value}"
       end)
-      |> Enum.join(query_string_joiner)
 
     :crypto.mac(
       :hmac,
