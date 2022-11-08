@@ -25,6 +25,12 @@ defmodule ShopifexWeb.Routes do
         plug(Shopifex.Plug.ShopifyWebhook)
       end
 
+      pipeline :shopify_proxy do
+        plug(:fetch_session)
+        plug(Shopifex.Plug.FetchFlash)
+        plug(Shopifex.Plug.ValidateHmac)
+      end
+
       pipeline :shopify_admin_link do
         plug(:accepts, ["json"])
         plug(:fetch_session)
