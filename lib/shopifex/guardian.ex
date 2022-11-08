@@ -1,8 +1,8 @@
 defmodule Shopifex.Guardian do
   use Guardian,
     otp_app: :shopifex,
-    issuer: Application.get_env(:shopifex, :app_name),
-    secret_key: Application.get_env(:shopifex, :secret),
+    issuer: {Application, :get_env, [:shopifex, :app_name]},
+    secret_key: {Application, :get_env, [:shopifex, :secret]},
     allowed_algos: ["HS512", "HS256"]
 
   def subject_for_token(shop, _claims), do: {:ok, Shopifex.Shops.get_url(shop)}
