@@ -7,12 +7,12 @@
             <div class="Polaris-TextContainer">
               <p class="Polaris-DisplayText Polaris-DisplayText--sizeMedium">Install <%= Application.fetch_env!(:shopifex, :app_name) %> on your Shopify store.</p>
               <div class="Polaris-EmptyState__Content">
-                <%= if get_flash(@conn, :error) do %>
+                <%= if ShopifexWeb.Flash.get(assigns, :error) do %>
                   <div style="--top-bar-background:#00848e; --top-bar-background-lighter:#1d9ba4; --top-bar-color:#f9fafb; --p-frame-offset:0px;">
                     <div id="myFieldIDError" class="Polaris-InlineError">
                       <div class="Polaris-InlineError__Icon"><span class="Polaris-Icon"><svg viewBox="0 0 20 20" class="Polaris-Icon__Svg" focusable="false" aria-hidden="true">
                             <path d="M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16zm-1-8h2V6H9v4zm0 4h2v-2H9v2z" fill-rule="evenodd"></path>
-                          </svg></span></div><%= get_flash(@conn, :error) %>
+                          </svg></span></div><%= ShopifexWeb.Flash.get(assigns, :error) %>
                     </div>
                   </div>
                 <% end %>

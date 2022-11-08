@@ -29,4 +29,15 @@ defmodule ShopifexWeb.AuthControllerTest do
 
     assert conn.status == 302
   end
+
+  test "store selector is rendered with a flash error if an invalid url is passed", %{conn: conn} do
+    conn =
+      get(conn, Routes.auth_path(@endpoint, :initialize_installation), %{
+        "shop" => "invalid.shopify.url"
+      })
+
+    body = html_response(conn, 200)
+    assert body =~ "Install"
+    assert body =~ "Invalid shop URL"
+  end
 end
