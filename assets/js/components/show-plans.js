@@ -45,7 +45,7 @@ export default class ShowPlans extends React.Component {
                 features.push(<List.Item key={"card" + i + "list" + j}>{feature}</List.Item>)
             }
             cards.push(
-                <div style={{ width: '250px', marginRight: '10px' }} key={"card" + i}>
+                <div style={{ minWidth: '250px', maxWidth: '350px', marginRight: '10px' }} key={"card" + i}>
                     <Card
                         title={`${plan.name}`}
                         primaryFooterAction={{
@@ -67,9 +67,14 @@ export default class ShowPlans extends React.Component {
                 </div>
             )
         }
+
         return <Page
             fullWidth
             title="Payment options"
+            secondaryActions={[{
+                content: "Back",
+                onAction: () => { history.back(); }
+            }]}
         >
             <p>Select a plan to continue</p>
             <div style={{ padding: '20px' }}>

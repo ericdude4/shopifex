@@ -125,6 +125,7 @@ defmodule Shopifex.PaymentGuard do
           charge_id: charge_id,
           grants: plan.grants,
           remaining_usages: plan.usages,
+          capped_amount: plan.capped_amount,
           total_usages: 0
         })
       end

@@ -151,6 +151,8 @@ defmodule ShopifexWeb.PaymentController do
               price: plan.price,
               test: test_charge?(shop, plan),
               trial_days: Map.get(plan, :trial_days, 0),
+              capped_amount: Map.get(plan, :capped_amount),
+              terms: Map.get(plan, :terms),
               return_url:
                 "#{redirect_uri}?plan_id=#{plan.id}&shop=#{Shopifex.Shops.get_url(shop)}"
             }
