@@ -95,6 +95,7 @@ defmodule ShopifexWeb.PaymentController do
         send_resp(conn, 200, Jason.encode!(charge))
       end
 
+      @impl ShopifexWeb.PaymentController
       def test_charge?(_shop, %{test: test?} = _plan), do: test?
 
       # annual billing is only possible w/ the GraphQL API
