@@ -121,7 +121,7 @@ defmodule ShopifexWeb.Routes do
     end
   end
 
-  defmacro payment_routes(controller \\ ShopifexWeb.PaymentController, opts) do
+  defmacro payment_routes(controller \\ ShopifexWeb.PaymentController, opts \\ []) do
     # TODO: make embedded default in v3+
     payment_pages_pipe_through =
       if opts[:shopify_embedded] do
