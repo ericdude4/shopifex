@@ -121,10 +121,18 @@ defmodule ShopifexWeb.Routes do
     end
   end
 
-  defmacro payment_routes(controller \\ ShopifexWeb.PaymentController) do
+  defmacro payment_routes(controller \\ ShopifexWeb.PaymentController, opts) do
+    # TODO: make embedded default in v3+
+    payment_pages_pipe_through =
+      if opts[:shopify_embedded] do
+        [:shopifex_browser, :shopify_session, :shopify_embedded]
+      else
+        [:shopifex_browser, :shopify_session]
+      end
+
     quote do
       scope "/payment" do
-        pipe_through([:shopifex_browser, :shopify_session])
+        pipe_through(unquote(payment_pages_pipe_through))
 
         get("/show-plans", unquote(controller), :show_plans)
         post("/select-plan", unquote(controller), :select_plan)
