@@ -9,12 +9,13 @@ defmodule Shopifex.Plug.SetCSPHeader do
 
   @shopify_unified_admin_url "https://admin.shopify.com"
 
+  @spec init(options :: Plug.opts()) :: Plug.opts()
   def init(options) do
     # initialize options
     options
   end
 
-  @spec call(conn :: Plug.Conn.t(), opts :: any()) :: Plug.Conn.t() | none()
+  @spec call(conn :: Plug.Conn.t(), opts :: Plug.opts()) :: Plug.Conn.t() | none()
   def call(conn, _) do
     case get_current_shop(conn) do
       {:ok, shop} ->
