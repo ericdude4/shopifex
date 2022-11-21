@@ -1,7 +1,7 @@
 defmodule Shopifex.Plug.SetCSPHeader do
   @moduledoc """
   Adds Content-Security-Policy response header to the provided `Plug.Conn` in order to securely
-  load emnedded application in the Shopify admin panel.
+  load embedded application in the Shopify admin panel.
 
   Read more here: https://shopify.dev/apps/store/security/iframe-protection#embedded-apps
   """
