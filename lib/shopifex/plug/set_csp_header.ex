@@ -16,16 +16,17 @@ defmodule Shopifex.Plug.SetCSPHeader do
 
   @spec call(conn :: Plug.Conn.t(), opts :: any()) :: Plug.Conn.t() | none()
   def call(conn, _) do
-    with {:ok, shop} <- get_current_shop(conn),
-         url = Shopifex.Shops.get_url(shop) do
-      allowed_frame_ancestors = [@shopify_unified_admin_url, "https://#{url}"]
+    case get_current_shop(conn) do
+      {:ok, shop} ->
+        url = Shopifex.Shops.get_url(shop)
+        allowed_frame_ancestors = [@shopify_unified_admin_url, "https://#{url}"]
 
-      Plug.Conn.put_resp_header(
-        conn,
-        "content-security-policy",
-        "frame-ancestors #{Enum.join(allowed_frame_ancestors, " ")};"
-      )
-    else
+        Plug.Conn.put_resp_header(
+          conn,
+          "content-security-policy",
+          "frame-ancestors #{Enum.join(allowed_frame_ancestors, " ")};"
+        )
+
       {:error, :no_current_shop} ->
         raise(__MODULE__,
           message:
