@@ -2,14 +2,22 @@ defmodule ShopifexWeb.AuthControllerTest do
   use ShopifexWeb.ConnCase, async: true
 
   test "new shop is redirected to install", %{conn: conn} do
-    conn =
-      get(conn, Routes.auth_path(@endpoint, :initialize_installation), %{
-        "shop" => "shopifex.myshopify.com"
-      })
+    # Ensure it works with and without trailing slash
+    shop_urls = [
+      "shopifex.myshopify.com",
+      "shopifex.myshopify.com/"
+    ]
 
-    assert conn.status == 302
-    [location] = Plug.Conn.get_resp_header(conn, "location")
-    assert location =~ "https://shopifex.myshopify.com/admin/oauth/authorize"
+    for shop_url <- shop_urls do
+      conn =
+        get(conn, Routes.auth_path(@endpoint, :initialize_installation), %{
+          "shop" => shop_url
+        })
+
+      assert conn.status == 302
+      [location] = Plug.Conn.get_resp_header(conn, "location")
+      assert location =~ "https://shopifex.myshopify.com/admin/oauth/authorize"
+    end
   end
 
   test "locale is an optional parameter in auth flow", %{conn: conn} do

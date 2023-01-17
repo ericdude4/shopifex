@@ -94,6 +94,8 @@ defmodule ShopifexWeb.AuthController do
       end
 
       def initialize_installation(conn, %{"shop" => shop_url} = params) do
+        shop_url = String.trim_trailing(shop_url, "/")
+
         if Regex.match?(~r/^.*\.myshopify\.com/, shop_url) do
           # check if store is in the system already:
           case Shopifex.Shops.get_shop_by_url(shop_url) do
