@@ -94,28 +94,29 @@ defmodule ShopifexWeb.AuthController do
       end
 
       def initialize_installation(conn, %{"shop" => shop_url} = params) do
-        shop_url = String.trim_trailing(shop_url, "/")
-
         if Regex.match?(~r/^.*\.myshopify\.com/, shop_url) do
+          # The installation case and reinstallation case share the same URL, and query parameters,
+          # except for the value of of the redirect_uri
+          url = fn redirect_uri ->
+            build_external_url(["https://", shop_url, "/admin/oauth/authorize"], %{
+              client_id: Application.fetch_env!(:shopifex, :api_key),
+              scope: Application.fetch_env!(:shopifex, :scopes),
+              redirect_uri: redirect_uri,
+              state: params["state"]
+            })
+          end
+
           # check if store is in the system already:
           case Shopifex.Shops.get_shop_by_url(shop_url) do
             nil ->
               Logger.info("Initiating shop installation for #{shop_url}")
-
-              install_url =
-                "https://#{shop_url}/admin/oauth/authorize?client_id=#{Application.fetch_env!(:shopifex, :api_key)}&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{Application.fetch_env!(:shopifex, :redirect_uri)}&state=#{params["state"]}"
-
-              conn
-              |> redirect(external: install_url)
+              install_url = url.(Application.fetch_env!(:shopifex, :redirect_uri))
+              redirect(conn, external: install_url)
 
             shop ->
               Logger.info("Initiating shop reinstallation for #{shop_url}")
-
-              reinstall_url =
-                "https://#{shop_url}/admin/oauth/authorize?client_id=#{Application.fetch_env!(:shopifex, :api_key)}&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{Application.fetch_env!(:shopifex, :reinstall_uri)}&state=#{params["state"]}"
-
-              conn
-              |> redirect(external: reinstall_url)
+              reinstall_url = url.(Application.fetch_env!(:shopifex, :reinstall_uri))
+              redirect(conn, external: reinstall_url)
           end
         else
           conn
@@ -128,10 +129,11 @@ defmodule ShopifexWeb.AuthController do
 
       @impl ShopifexWeb.AuthController
       def after_install(conn, shop, _state) do
-        redirect(conn,
-          external:
-            "https://#{Shopifex.Shops.get_url(shop)}/admin/apps/#{Application.fetch_env!(:shopifex, :api_key)}"
-        )
+        shop_url = Shopifex.Shops.get_url(shop)
+        api_key = Application.fetch_env!(:shopifex, :api_key)
+
+        url = build_external_url(["https://", shop_url, "/admin/apps", api_key])
+        redirect(conn, external: url)
       end
 
       @impl ShopifexWeb.AuthController
@@ -141,7 +143,7 @@ defmodule ShopifexWeb.AuthController do
 
       def install(conn, %{"code" => code, "shop" => shop_url} = params) do
         state = Map.get(params, "state", "")
-        url = "https://#{shop_url}/admin/oauth/access_token"
+        url = build_external_url(["https://", shop_url, "/admin/oauth/access_token"])
 
         case(
           HTTPoison.post(
@@ -176,15 +178,16 @@ defmodule ShopifexWeb.AuthController do
 
       @impl ShopifexWeb.AuthController
       def after_update(conn, shop, _state) do
-        redirect(conn,
-          external:
-            "https://#{Shopifex.Shops.get_url(shop)}/admin/apps/#{Application.fetch_env!(:shopifex, :api_key)}"
-        )
+        shop_url = Shopifex.Shops.get_url(shop)
+        api_key = Application.fetch_env!(:shopifex, :api_key)
+
+        url = build_external_url(["https://", shop_url, "/admin/apps/", api_key])
+        redirect(conn, external: url)
       end
 
       def update(conn, %{"code" => code, "shop" => shop_url} = params) do
         state = Map.get(params, "state", "")
-        url = "https://#{shop_url}/admin/oauth/access_token"
+        url = build_external_url(["https://", shop_url, "/admin/oauth/access_token"])
 
         case(
           HTTPoison.post(
@@ -218,6 +221,10 @@ defmodule ShopifexWeb.AuthController do
       end
 
       defoverridable after_install: 3, after_update: 3, insert_shop: 1, auth: 2
+
+      defp build_external_url(path, query_params \\ %{}) do
+        Path.join(path) <> "?" <> URI.encode_query(query_params)
+      end
     end
   end
 end
