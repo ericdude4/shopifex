@@ -81,7 +81,7 @@ Now the following pipelines are accessible:
 - `:shopify_webhook` -> Validates Shopify webhook requests HMAC and makes session information available via `Shopifex.Plug` API.
 - `:shopify_admin_link` -> Validates Shopify admin link & bulk action link requests and makes session information available via `Shopifex.Plug` API.
 - `:shopify_api` -> Ensures that a valid Shopify session token or Shopifex token are present in `Authorization` header. Useful for async requests between your SPA front end and Shopifex backend.
-- `:shopifex_browser` -> Same as your normal `:browser` pipeline, except it calls `Shopifex.Plug.LoadInIframe`.
+- `:shopifex_browser` -> Same as your normal `:browser` pipeline, except it calls `Shopifex.Plug.LoadInIframe`.  Depreciated; does not work with Phoenix 1.6 generated apps.
 
 Now add this basic example of these plugs in action in `router.ex`. These endpoints need to be added to your Shopify app whitelist
 
@@ -90,10 +90,16 @@ Now add this basic example of these plugs in action in `router.ex`. These endpoi
 # Include all auth (when Shopify requests to render your app in an iframe), installation and update routes 
 ShopifexWeb.Routes.auth_routes(MyAppWeb.AuthController)
 
+# Add the LoadInIframe plug to your existing :browser pipeline
+pipeline :browser do
+  # ... Other plugs
+  plug Shopifex.Plug.LoadInIframe
+end
+
 # Endpoints accessible within the Shopify admin panel iFrame.
 # Don't include this scope block if you are creating a SPA.
 scope "/", MyAppWeb do
-  pipe_through [:shopifex_browser, :shopify_session]
+  pipe_through [:browser, :shopify_session]
 
   get "/", PageController, :index
 end
