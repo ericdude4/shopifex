@@ -21,7 +21,7 @@ defmodule ShopifexWeb.Routes do
   - `:shopify_webhook`: Validates Shopify webhook requests HMAC and makes session information available via Shopifex.Plug API.
   - `:shopify_admin_link`: Validates Shopify admin link & bulk action link requests and makes session information available via Shopifex.Plug API. Also removes iFrame blocking headers so app can render in Shopify admin.
   - `:shopify_api`: Ensures that a valid Shopify session token or Shopifex token are present in Authorization header. Useful for async requests between your SPA front end and Shopifex backend.
-  - `:shopifex_browser`: Same as your normal :browser pipeline, except it calls Shopifex.Plug.LoadInIframe.
+  - `:shopifex_browser`: Same as your normal :browser pipeline, except it calls Shopifex.Plug.LoadInIframe.  Deprecated; does not work with Phoenix 1.6 generated apps.
   - `:shopify_embedded`: Sets Content-Security-Policy headers to restrict app loading to within the Shopify admin. Read more: https://shopify.dev/apps/store/security/iframe-protection#embedded-apps
   """
   defmacro pipelines() do
