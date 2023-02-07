@@ -10,6 +10,7 @@ document.addEventListener("DOMContentLoaded", e => {
             shop_url: "<%= shop_url(@conn) %>",
             plan_select_route: "<%= Application.get_env(:shopifex, :path_prefix, "") %>/payment/select-plan",
             shopify_api_key: "<%= Application.get_env(:shopifex, :api_key) %>",
+            shopify_host: "<%= Shopifex.Plug.current_shopify_host(@conn) %>",
             session_token: "<%= Shopifex.Plug.session_token(@conn) %>"
         }
     )

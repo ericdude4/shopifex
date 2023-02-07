@@ -13,9 +13,9 @@ window.WrappedShowPlans = (props) => {
       <ShowPlans
         plans={props.plans}
         guard={props.guard}
-        shopUrl={props.shop_url}
         redirectAfter={props.redirect_after}
         shopifyApiKey={props.shopify_api_key}
+        shopifyHost={props.shopify_host}
         sessionToken={props.session_token}
         planSelectRoute={props.plan_select_route}
       />
@@ -25,11 +25,11 @@ window.WrappedShowPlans = (props) => {
 }
 
 window.WrappedRedirect = ({
-  shop_url, shopify_api_key, redirect_location
+  shopify_host, shopify_api_key, redirect_location
 }) => {
   return ReactDOM.render(
     <AppProvider i18n={enTranslations}>
-      <ExternalRedirect shopUrl={shop_url} shopifyApiKey={shopify_api_key} redirectLocation={redirect_location} />
+      <ExternalRedirect shopifyHost={shopify_host} shopifyApiKey={shopify_api_key} redirectLocation={redirect_location} />
     </AppProvider>,
     document.getElementById("root")
   );

@@ -5,7 +5,7 @@ document.addEventListener("DOMContentLoaded", e => {
     window.WrappedRedirect(
         {
             redirect_location: "<%= raw(@redirect_location) %>",
-            shop_url: "<%= shop_url(@conn) %>",
+            shopify_host: "<%= Shopifex.Plug.current_shopify_host(@conn) %>",
             shopify_api_key: "<%= Application.get_env(:shopifex, :api_key) %>"
         }
     )

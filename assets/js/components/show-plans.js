@@ -14,7 +14,7 @@ export default class ShowPlans extends React.Component {
         super(props)
         const app = createApp({
             apiKey: props.shopifyApiKey,
-            shopOrigin: props.shopUrl,
+            host: props.shopifyHost,
         })
         const redirect = Redirect.create(app);
         this.state = { redirect: redirect }

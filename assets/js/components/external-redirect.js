@@ -3,11 +3,11 @@ import createApp from '@shopify/app-bridge';
 import { Redirect } from '@shopify/app-bridge/actions';
 import { Frame, TextContainer, Layout, Page } from '@shopify/polaris'
 
-export default function ExternalRedirect({ shopUrl, shopifyApiKey, redirectLocation }) {
+export default function ExternalRedirect({ shopifyHost, shopifyApiKey, redirectLocation }) {
   const app = createApp({
     apiKey: shopifyApiKey,
-    shopOrigin: shopUrl,
-  });
+    host: shopifyHost,
+  })
 
   const redirect = Redirect.create(app);
 
