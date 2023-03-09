@@ -7,7 +7,7 @@ defmodule Shopifex.MixProject do
       version: "2.1.13",
       elixir: "~> 1.10",
       start_permanent: Mix.env() == :prod,
-      compilers: [:phoenix] ++ Mix.compilers(),
+      compilers: Mix.compilers(),
       deps: deps(),
       aliases: aliases(),
       elixirc_paths: elixirc_paths(Mix.env()),
@@ -52,6 +52,7 @@ defmodule Shopifex.MixProject do
     [
       {:phoenix, ">= 1.5.8"},
       {:phoenix_ecto, "~> 4.4"},
+      {:phoenix_view, "~> 2.0"},
       {:ecto_sql, "~> 3.7"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, ">= 2.11.0"},
