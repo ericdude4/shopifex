@@ -25,7 +25,12 @@ defmodule Shopifex.Plug.ShopifySession do
 
   defp get_token_from_conn(%Plug.Conn{params: %{"token" => token}}), do: token
 
-  defp get_token_from_conn(_), do: nil
+  defp get_token_from_conn(conn) do
+    case Plug.Conn.get_req_header(conn, "authorization") do
+      [] -> nil
+      ["Bearer " <> token | []] -> token
+    end
+  end
 
   defp initiate_new_session(conn) do
     expected_hmac = Shopifex.Plug.build_hmac(conn)
