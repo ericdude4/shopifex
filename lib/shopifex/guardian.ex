@@ -1,9 +1,16 @@
 defmodule Shopifex.Guardian do
+  # AppBridge frequently sends future `nbf`, and it causes `{:error, :token_not_yet_valid}`.
+  # Accept few seconds clock skew to avoid this error.
+  # 
+  # see: https://github.com/Shopify/shopify_python_api/blob/master/shopify/session_token.py#L58-L60
+  @allowed_drift Application.compile_env(:shopifex, :allowed_drift, 10_000)
+
   use Guardian,
     otp_app: :shopifex,
     issuer: {Application, :get_env, [:shopifex, :app_name]},
     secret_key: {Application, :get_env, [:shopifex, :secret]},
-    allowed_algos: ["HS512", "HS256"]
+    allowed_algos: ["HS512", "HS256"],
+    allowed_drift: @allowed_drift
 
   def subject_for_token(shop, _claims), do: {:ok, Shopifex.Shops.get_url(shop)}
 

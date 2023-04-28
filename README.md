@@ -56,7 +56,8 @@ config :shopifex,
   scopes: "read_inventory,write_inventory,read_products,write_products,read_orders",
   api_key: "shopifyapikey123",
   secret: "shopifyapisecret456",
-  webhook_topics: ["app/uninstalled"] # These are automatically subscribed on a store upon install
+  webhook_topics: ["app/uninstalled"], # These are automatically subscribed on a store upon install
+  allowed_drift: 10_000 # session token exp/nbf tolerance in ms (defaults to 10s)
 ```
 
 Update your `endpoint.ex` to include the custom body parser. This is necessary for HMAC validation to work.
