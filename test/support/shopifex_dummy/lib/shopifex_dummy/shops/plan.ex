@@ -20,6 +20,6 @@ defmodule ShopifexDummy.Shops.Plan do
   def changeset(plan, attrs) do
     plan
     |> cast(attrs, [:name, :price, :features, :grants, :test, :type, :usages])
-    |> validate_required([:name, :price, :features, :grants, :type, :usages])
+    |> validate_required([:name, :price, :features, :grants, :type])
   end
 end

@@ -17,8 +17,7 @@ defmodule ShopifexDummy.Shops.Grant do
   @doc false
   def changeset(grant, attrs) do
     grant
-    |> cast(attrs, [:charge_id, :grants, :remaining_usages, :total_usages])
-    |> validate_required([:grants])
-    |> put_assoc(:shop, attrs.shop)
+    |> cast(attrs, [:charge_id, :grants, :remaining_usages, :total_usages, :shop_id])
+    |> validate_required([:grants, :shop_id])
   end
 end

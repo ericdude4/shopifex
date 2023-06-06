@@ -25,9 +25,16 @@ defmodule Shopifex.PaymentGuard do
   @doc """
   Returns a payment record which grants access to the payment guard.
   Default behaviour filters where `remaining_usages` is greater than
-  0 or has a nil value (unlimited usage).
+  0 or has a nil value (unlimited usage). You can also provide a list of
+  grants in place of the first parameter in order to avoid a trip to the
+  database.
   """
-  @callback grant_for_guard(shop(), guard()) :: grant() | boolean()
+  @callback grant_for_guard(shop() | [grant()], guard()) :: grant() | boolean()
+
+  @doc """
+  Returns a list of valid grants which are associated with the store.
+  """
+  @callback grants_for_shop(shop()) :: [grant()]
 
   @doc """
   Updates the grant to reflect the usage of it in some way. Defaults to decrementing
@@ -73,7 +80,7 @@ defmodule Shopifex.PaymentGuard do
       def repo, do: Application.fetch_env!(:shopifex, :repo)
 
       @impl Shopifex.PaymentGuard
-      def grant_for_guard(shop, guard) do
+      def grant_for_guard(shop, guard) when is_struct(shop) do
         from(s in grant_schema(),
           where: s.shop_id == ^shop.id,
           where: ^guard in s.grants,
@@ -82,6 +89,25 @@ defmodule Shopifex.PaymentGuard do
           limit: 1
         )
         |> repo().one()
+      end
+
+      def grant_for_guard(grants, guard) when is_list(grants) do
+        # In this case, the list of grants is being provided as input, so just search that
+        # set for a valid grant.
+        Enum.find(grants, fn grant ->
+          guard in grant.grants and
+            (is_nil(grant.remaining_usages) or grant.remaining_usages > 0)
+        end)
+      end
+
+      @impl Shopifex.PaymentGuard
+      def grants_for_shop(shop) do
+        from(s in grant_schema(),
+          where: s.shop_id == ^shop.id,
+          where: is_nil(s.remaining_usages),
+          or_where: s.remaining_usages > 0
+        )
+        |> repo().all()
       end
 
       @impl Shopifex.PaymentGuard
@@ -130,6 +156,7 @@ defmodule Shopifex.PaymentGuard do
       end
 
       defoverridable grant_for_guard: 2,
+                     grants_for_shop: 1,
                      use_grant: 2,
                      get_plan: 1,
                      create_grant: 3,

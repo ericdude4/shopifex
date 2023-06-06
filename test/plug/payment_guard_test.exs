@@ -29,7 +29,7 @@ defmodule Shopifex.Plug.PaymentGuardTest do
     conn: conn,
     shop: shop
   } do
-    Shopifex.Shops.create_grant(%{shop: shop, grants: ["premium_access"]})
+    Shopifex.Shops.create_grant(%{shop_id: shop.id, grants: ["premium_access"]})
 
     conn = Shopifex.Plug.PaymentGuard.call(conn, "premium_access")
 
