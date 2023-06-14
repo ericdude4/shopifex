@@ -29,6 +29,7 @@ defmodule Shopifex.Plug.ShopifySession do
     case Plug.Conn.get_req_header(conn, "authorization") do
       [] -> nil
       ["Bearer " <> token | []] -> token
+      _ -> nil
     end
   end
 
