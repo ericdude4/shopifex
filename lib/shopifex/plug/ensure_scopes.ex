@@ -51,13 +51,22 @@ defmodule Shopifex.Plug.EnsureScopes do
               "Shop #{Shopifex.Shops.get_url(shop)} is missing required scopes #{inspect(missing_scopes)}, initiating app update"
             )
 
+            base_required_scopes =
+              :shopifex
+              |> Application.get_env(:scopes, "")
+              |> String.split(",")
+
+            all_scopes_to_request = Enum.join(missing_scopes ++ base_required_scopes, ",")
+
+            message = Keyword.get(opts, :message)
+
             reinstall_url =
-              "https://#{Shopifex.Shops.get_url(shop)}/admin/oauth/authorize?client_id=#{Application.fetch_env!(:shopifex, :api_key)}&scope=#{Application.fetch_env!(:shopifex, :scopes)}&redirect_uri=#{Application.fetch_env!(:shopifex, :reinstall_uri)}"
+              "https://#{Shopifex.Shops.get_url(shop)}/admin/oauth/authorize?client_id=#{Application.fetch_env!(:shopifex, :api_key)}&scope=#{all_scopes_to_request}&redirect_uri=#{Application.fetch_env!(:shopifex, :reinstall_uri)}"
 
             conn
             |> put_view(ShopifexWeb.PageView)
             |> put_layout({ShopifexWeb.LayoutView, "app.html"})
-            |> render("redirect.html", redirect_location: reinstall_url)
+            |> render("redirect.html", redirect_location: reinstall_url, message: message)
             |> halt()
         end
     end

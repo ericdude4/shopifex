@@ -25,11 +25,11 @@ window.WrappedShowPlans = (props) => {
 }
 
 window.WrappedRedirect = ({
-  shopify_host, shopify_api_key, redirect_location
+  shopify_host, shopify_api_key, redirect_location, message
 }) => {
   return ReactDOM.render(
     <AppProvider i18n={enTranslations}>
-      <ExternalRedirect shopifyHost={shopify_host} shopifyApiKey={shopify_api_key} redirectLocation={redirect_location} />
+      <ExternalRedirect shopifyHost={shopify_host} shopifyApiKey={shopify_api_key} redirectLocation={redirect_location} message={message} />
     </AppProvider>,
     document.getElementById("root")
   );

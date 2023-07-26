@@ -6,7 +6,8 @@ document.addEventListener("DOMContentLoaded", e => {
         {
             redirect_location: "<%= raw(@redirect_location) %>",
             shopify_host: "<%= Shopifex.Plug.current_shopify_host(@conn) %>",
-            shopify_api_key: "<%= Application.get_env(:shopifex, :api_key) %>"
+            shopify_api_key: "<%= Application.get_env(:shopifex, :api_key) %>",
+            message: "<%= @message %>"
         }
     )
 })
