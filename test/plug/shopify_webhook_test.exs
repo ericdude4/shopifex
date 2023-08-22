@@ -12,7 +12,7 @@ defmodule Shopifex.Plug.ShopifyWebhookTest do
     {:ok, shop: shop}
   end
 
-  test "nil shop with valid HMAC returns 404", %{conn: conn} do
+  test "nil shop with valid HMAC returns 200", %{conn: conn} do
     hmac = "yJgOX9Rf6sY058r98V06ZCrhbw7TlcryRf12e7RmKoU="
 
     conn =
@@ -22,7 +22,20 @@ defmodule Shopifex.Plug.ShopifyWebhookTest do
       |> Plug.Conn.put_req_header("content-type", "application/json")
       |> post(Routes.webhook_path(@endpoint, :action), "{\"foo\": \"bar\"}")
 
-    assert conn.status == 404
+    assert conn.status == 200
+  end
+
+  test "valid shop with invalid HMAC returns 401", %{conn: conn} do
+    hmac = "foo"
+
+    conn =
+      conn
+      |> Plug.Conn.put_req_header("x-shopify-shop-domain", "noshop.myshopify.com")
+      |> Plug.Conn.put_req_header("x-shopify-hmac-sha256", hmac)
+      |> Plug.Conn.put_req_header("content-type", "application/json")
+      |> post(Routes.webhook_path(@endpoint, :action), "{\"foo\": \"bar\"}")
+
+    assert conn.status == 401
   end
 
   test "valid shop with valid HMAC returns 200", %{conn: conn} do
