@@ -26,8 +26,9 @@ defmodule Shopifex.Plug.ShopifyWebhook do
         locale = Map.get(conn.params, "locale")
         Shopifex.Plug.build_session(conn, shop, host, locale)
       else
+        # Send 200 response so that Shopify doesn't retry the webhook for a store that doesn't exist.
         conn
-        |> send_resp(404, "no store found with url")
+        |> send_resp(200, "no store found with url")
         |> halt()
       end
     else
