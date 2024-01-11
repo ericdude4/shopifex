@@ -104,7 +104,7 @@ defmodule ShopifexWeb.PaymentController do
 
         case Neuron.query(
                """
-               mutation appSubscriptionCreate($name: String!, $return_url: URL!, $test: Boolean!, $price: Decimal!) {
+               mutation appSubscriptionCreate($name: String!, $return_url: URL!, $test: Boolean!, $price: Decimal!, $trial_days: Int!) {
                  appSubscriptionCreate(name: $name, returnUrl: $return_url, test: $test, trialDays: $trial_days, lineItems: [{plan: {appRecurringPricingDetails: {price: {amount: $price, currencyCode: USD}, interval: ANNUAL}}}]) {
                    appSubscription {
                      id
