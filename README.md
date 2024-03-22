@@ -130,10 +130,10 @@ defmodule MyAppWeb.AuthController do
   # Thats it! Validation, installation are now handled for you :)
   
   # Optionally, override the `after_install` callback
-  def after_install(conn, shop) do
+  def after_install(conn, shop, oauth_state) do
     # TODO: send yourself an e-mail
     # follow default behaviour.
-    super(conn, shop)
+    super(conn, shop, oauth_state)
   end
 end
 ```
