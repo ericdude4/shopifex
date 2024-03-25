@@ -148,7 +148,7 @@ defmodule Shopifex.Shops do
   @spec get_current_webhooks(shop :: shop()) :: {:ok, list()} | any()
   def get_current_webhooks(shop) do
     with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
-           HTTPoison.get("https://#{Shopifex.Shops.get_url(shop)}/admin/api/2023-04/webhooks.json",
+           HTTPoison.get("https://#{Shopifex.Shops.get_url(shop)}/admin/api/2024-01/webhooks.json",
              "X-Shopify-Access-Token": shop.access_token,
              "Content-Type": "application/json"
            ),
@@ -160,7 +160,7 @@ defmodule Shopifex.Shops do
   defp create_webhook(shop, topic) do
     with {:ok, %HTTPoison.Response{status_code: 201, body: body}} <-
            HTTPoison.post(
-             "https://#{Shopifex.Shops.get_url(shop)}/admin/api/2023-04/webhooks.json",
+             "https://#{Shopifex.Shops.get_url(shop)}/admin/api/2024-01/webhooks.json",
              Jason.encode!(%{
                webhook: %{
                  topic: topic,
@@ -178,7 +178,7 @@ defmodule Shopifex.Shops do
 
   def delete_webhook(shop, id) do
     HTTPoison.delete(
-      "https://#{Shopifex.Shops.get_url(shop)}/admin/api/2023-04/webhooks/#{id}.json",
+      "https://#{Shopifex.Shops.get_url(shop)}/admin/api/2024-01/webhooks/#{id}.json",
       "X-Shopify-Access-Token": shop.access_token,
       "Content-Type": "application/json"
     )
