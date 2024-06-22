@@ -9,7 +9,7 @@
       "method": "get",
       "options": [],
       "request_body": "",
-      "url": "https://shopifex-test.myshopify.com/admin/webhooks.json"
+      "url": "https://shopifex-test.myshopify.com/admin/api/2024-01/webhooks.json"
     },
     "response": {
       "binary": false,
@@ -67,7 +67,7 @@
       "method": "post",
       "options": [],
       "request_body": "",
-      "url": "https://shopifex-test.myshopify.com/admin/webhooks.json"
+      "url": "https://shopifex-test.myshopify.com/admin/api/2024-01/webhooks.json"
     },
     "response": {
       "binary": false,
@@ -125,7 +125,7 @@
       "method": "post",
       "options": [],
       "request_body": "",
-      "url": "https://shopifex-test.myshopify.com/admin/webhooks.json"
+      "url": "https://shopifex-test.myshopify.com/admin/api/2024-01/webhooks.json"
     },
     "response": {
       "binary": false,
