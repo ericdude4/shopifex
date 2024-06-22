@@ -11,7 +11,8 @@ defmodule Mix.Shopifex.Schema do
     @primary_key {:id, :binary_id, autogenerate: true}
     @foreign_key_type :binary_id<% end %>
     schema <%= inspect schema.table %> do
-      <%= for {k, v, o} <- schema.attrs do %>field <%= inspect k %>, <%= inspect (if v == :bigint do :integer else v end) %>, <%= inspect o %>
+      <%= for {k, v} <- schema.attrs do %>field <%= inspect k %>, <%= inspect (if v == :bigint do :integer else v end) %>
+      <% end %><%= for {k, v, o} <- schema.attrs do %>field <%= inspect k %>, <%= inspect (if v == :bigint do :integer else v end) %>, <%= inspect o %>
       <% end %><%= for assoc <- schema.assocs do %>
       <%= assoc.type %> <%= inspect assoc.relation %>, <%= inspect assoc.related_schema %>, foreign_key: <%= inspect assoc.foreign_key %>
       <% end %>
