@@ -18,6 +18,7 @@ window.WrappedShowPlans = (props) => {
         shopifyHost={props.shopify_host}
         sessionToken={props.session_token}
         planSelectRoute={props.plan_select_route}
+        currentGrants={props.current_grants}
       />
     </AppProvider>,
     document.getElementById("root")
