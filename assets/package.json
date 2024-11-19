@@ -9,7 +9,7 @@
   "dependencies": {
     "@shopify/app-bridge": "^3.4.3",
     "@shopify/app-bridge-utils": "^3.4.3",
-    "@shopify/polaris": "^7.4.0",
+    "@shopify/polaris": "^7.6.0",
     "axios": "^0.21.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1"
