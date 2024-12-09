@@ -9,6 +9,8 @@ defmodule Shopifex.Plug.ShopifySessionTest do
       |> Shopifex.Plug.ShopifySession.call([])
 
     assert %{"message" => "Unauthorized"} = json_response(conn, 403)
+
+    assert conn.halted
   end
 
   describe "authorized requests" do
