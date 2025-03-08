@@ -153,4 +153,19 @@ defmodule ShopifexWeb.Routes do
       end
     end
   end
+
+  @doc """
+  Generate a live session with the current_shop and session token assigned. All other
+  options are passed through to `live_session`.
+  """
+  @spec shopifex_live_session(atom, opts :: Keyword.t()) :: Macro.t()
+  defmacro shopifex_live_session(session_name, opts \\ [], do: block) do
+    quote do
+      shopifex_live_session_opts = unquote(opts) |> ShopifexWeb.LiveSession.opts()
+
+      Phoenix.LiveView.Router.live_session unquote(session_name), shopifex_live_session_opts do
+        unquote(block)
+      end
+    end
+  end
 end

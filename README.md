@@ -196,6 +196,31 @@ EEx template form:
 <% end %>
 ```
 
+## Using LiveView in your embedded app
+There are two special considerations to using LiveView in your embedded app.
+
+First, you'll need to get the LiveView socket configured to work in the Shopify iframe. This [elixir](https://elixirforum.com/t/how-to-embed-a-liveview-via-iframe/65066) post gives some excellent tips.
+
+Second, you'll need to copy the `current_shop` and `session_token` from the Plug connection to the socket and make them available in your assigns on_mount. The `@current_shop` will be your authenticated Shop resource, and `@session_token` can be used when you navigate between live views similar to the template links above.  The `shopifex_live_session` macro is a drop-in replacement fom `live_session` to handle this.
+
+```
+scope "/", ShoplensWeb do
+  pipe_through [:shopifex_browser, :shopify_session]
+
+  ShopifexWeb.Routes.shopifex_live_session :embedded, layout: {MyApp.Layouts, :embedded} do
+    live "/", MyAppLive
+    ...
+  end
+
+  # If you need more control, you can still use `live_session` like this:
+  #  live_session :embedded, 
+  #    session: {ShopifexWeb.LiveSession, :put_shop_in_session, []}, 
+  #    on_mount: {ShopifexWeb.LiveSession, :assign_shop_to_socket} do
+  #       ...
+  #   end
+end
+```
+
 ## Update app permissions
 
 You can also update the app permissions after installation. To do so, first you have to add `your-redirect-url.com/auth/update` to Shopify's whitelist.
