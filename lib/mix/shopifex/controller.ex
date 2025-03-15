@@ -35,7 +35,7 @@ defmodule Mix.Shopifex.Controller do
 
     # Mandatory Shopify customer data erasure GDPR webhook. Simply delete the shop (customer) record
     def handle_topic(conn, shop, "customers/redact") do
-      Shopifex.Shops.delete_shop(shop)
+      # If you store customer data you can delete it here.
 
       conn
       |> send_resp(204, "")
