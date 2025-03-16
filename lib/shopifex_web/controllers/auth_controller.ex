@@ -23,6 +23,23 @@ defmodule ShopifexWeb.AuthController do
   ## Example
 
       @impl true
+      def after_callback(conn, shop, oauth_state) do
+        # send yourself an e-mail about shop installation
+
+        # follow default behaviour.
+        super(conn, shop, oauth_state)
+      end
+  """
+  @callback after_callback(Plug.Conn.t(), shop(), oauth_state :: String.t()) :: Plug.Conn.t()
+
+  @doc """
+  An optional callback called after the installation is completed, the shop is
+  persisted in the database and webhooks are registered. By default, this function
+  redirects the user to the app within their Shopify admin panel.
+
+  ## Example
+
+      @impl true
       def after_install(conn, shop, oauth_state) do
         # send yourself an e-mail about shop installation
 
@@ -55,17 +72,27 @@ defmodule ShopifexWeb.AuthController do
   ## Example
 
       @impl true
-      def insert_shop(shop) do
-        # make sure there is only one store in the database because we don't have
-        # a unique index on the url column for some reason.
-
-        case Shopifex.Shops.get_shop_by_url(shop.url) do
-          nil -> super(shop)
-          shop -> shop
-        end
+      def insert_shop(shop_params) do
+        # Override the default behaviour, make sure to call `super` at some point
+        super(shop_params)
       end
+
   """
-  @callback insert_shop(shop()) :: shop()
+  @callback insert_shop(params :: shop()) :: shop()
+
+  @doc """
+  An optional callback which is called after the shop data has been retrieved from
+  Shopify API. This function should persist the shop data and return a shop record.
+
+  ## Example
+
+      @impl true
+      def update_shop(shop, shop_params) do
+        super(shop, shop_params)
+      end
+
+  """
+  @callback update_shop(shop(), params :: map()) :: shop()
 
   @doc """
   An optional callback which you can use to override how your app is rendered on
@@ -77,13 +104,25 @@ defmodule ShopifexWeb.AuthController do
   """
   @callback auth(conn :: Plug.Conn.t(), params :: Plug.Conn.params()) :: Plug.Conn.t()
 
-  @optional_callbacks after_install: 3, after_update: 3, insert_shop: 1, auth: 2
+  @optional_callbacks after_callback: 3,
+                      after_install: 3,
+                      after_update: 3,
+                      insert_shop: 1,
+                      update_shop: 2,
+                      auth: 2
 
   defmacro __using__(_opts) do
     quote do
-      @behaviour ShopifexWeb.AuthController
+      import ShopifexWeb.AuthController,
+        only: [
+          build_external_url: 1,
+          build_external_url: 2,
+          http_post_oauth: 2
+        ]
 
       require Logger
+
+      @behaviour ShopifexWeb.AuthController
 
       @impl ShopifexWeb.AuthController
       def auth(conn, _) do
@@ -128,42 +167,60 @@ defmodule ShopifexWeb.AuthController do
       end
 
       @impl ShopifexWeb.AuthController
-      def after_install(conn, shop, _state) do
-        shop_url = Shopifex.Shops.get_url(shop)
-        api_key = Application.fetch_env!(:shopifex, :api_key)
-
-        url = build_external_url(["https://", shop_url, "/admin/apps", api_key])
-        redirect(conn, external: url)
-      end
-
-      @impl ShopifexWeb.AuthController
       def insert_shop(shop) do
         Shopifex.Shops.create_shop(shop)
       end
 
-      def install(conn, %{"code" => code, "shop" => shop_url} = params) do
-        state = Map.get(params, "state", "")
-        url = build_external_url(["https://", shop_url, "/admin/oauth/access_token"])
+      @impl ShopifexWeb.AuthController
+      def after_callback(conn, shop, _state) do
+        redirect_to_shopify_admin(conn, shop)
+      end
 
-        case(
-          HTTPoison.post(
-            url,
-            Jason.encode!(%{
-              client_id: Application.fetch_env!(:shopifex, :api_key),
-              client_secret: Application.fetch_env!(:shopifex, :secret),
-              code: code
-            }),
-            "Content-Type": "application/json",
-            Accept: "application/json"
-          )
-        ) do
+      def callback(conn, %{"code" => code, "shop" => shop_url} = params) do
+        state = Map.get(params, "state", "")
+
+        case http_post_oauth(shop_url, code) do
           {:ok, response} ->
             params =
               response.body
               |> Jason.decode!(keys: :atoms)
               |> Map.put(:url, shop_url)
+              |> Map.put(Shopifex.Shops.get_scope_field(), params[:scope])
 
-            params = Map.put(params, Shopifex.Shops.get_scope_field(), params[:scope])
+            shop =
+              case Shopifex.Shops.get_shop_by_url(shop_url) do
+                nil ->
+                  insert_shop(params)
+
+                %_{} = shop ->
+                  params = Map.drop(params, :url)
+                  update_shop(shop, params)
+              end
+
+            Shopifex.Shops.configure_webhooks(shop)
+
+            after_callback(conn, shop, state)
+
+          error ->
+            raise Shopifex.InstallError, message: "Installation failed for shop #{shop_url}"
+        end
+      end
+
+      @impl ShopifexWeb.AuthController
+      def after_install(conn, shop, _state) do
+        redirect_to_shopify_admin(conn, shop)
+      end
+
+      def install(conn, %{"code" => code, "shop" => shop_url} = params) do
+        state = Map.get(params, "state", "")
+
+        case http_post_oauth(shop_url, code) do
+          {:ok, response} ->
+            params =
+              response.body
+              |> Jason.decode!(keys: :atoms)
+              |> Map.put(:url, shop_url)
+              |> Map.put(Shopifex.Shops.get_scope_field(), params[:scope])
 
             shop = insert_shop(params)
 
@@ -172,59 +229,79 @@ defmodule ShopifexWeb.AuthController do
             after_install(conn, shop, state)
 
           error ->
-            raise(Shopifex.InstallError, message: "Installation failed for shop #{shop_url}")
+            raise Shopifex.InstallError, message: "Installation failed for shop #{shop_url}"
         end
       end
 
       @impl ShopifexWeb.AuthController
-      def after_update(conn, shop, _state) do
-        shop_url = Shopifex.Shops.get_url(shop)
-        api_key = Application.fetch_env!(:shopifex, :api_key)
+      def update_shop(%_{} = shop, %{} = params) do
+        Shopifex.Shops.update_shop(shop, params)
+      end
 
-        url = build_external_url(["https://", shop_url, "/admin/apps/", api_key])
-        redirect(conn, external: url)
+      @impl ShopifexWeb.AuthController
+      def after_update(conn, shop, _state) do
+        redirect_to_shopify_admin(conn, shop)
       end
 
       def update(conn, %{"code" => code, "shop" => shop_url} = params) do
         state = Map.get(params, "state", "")
-        url = build_external_url(["https://", shop_url, "/admin/oauth/access_token"])
 
-        case(
-          HTTPoison.post(
-            url,
-            Jason.encode!(%{
-              client_id: Application.fetch_env!(:shopifex, :api_key),
-              client_secret: Application.fetch_env!(:shopifex, :secret),
-              code: code
-            }),
-            "Content-Type": "application/json",
-            Accept: "application/json"
-          )
-        ) do
+        case http_post_oauth(shop_url, code) do
           {:ok, response} ->
-            params = Jason.decode!(response.body, keys: :atoms)
-
-            params = Map.put(params, Shopifex.Shops.get_scope_field(), params[:scope])
+            params =
+              response.body
+              |> Jason.decode!(keys: :atoms)
+              |> Map.put(Shopifex.Shops.get_scope_field(), params[:scope])
 
             shop =
               shop_url
               |> Shopifex.Shops.get_shop_by_url()
-              |> Shopifex.Shops.update_shop(params)
+              |> update_shop(params)
 
             Shopifex.Shops.configure_webhooks(shop)
 
             after_update(conn, shop, state)
 
           error ->
-            raise(Shopifex.UpdateError, message: "Update failed for shop #{shop_url}")
+            raise Shopifex.UpdateError, message: "Update failed for shop #{shop_url}"
         end
       end
 
-      defoverridable after_install: 3, after_update: 3, insert_shop: 1, auth: 2
+      defoverridable after_callback: 3,
+                     after_install: 3,
+                     after_update: 3,
+                     insert_shop: 1,
+                     update_shop: 2,
+                     auth: 2
 
-      defp build_external_url(path, query_params \\ %{}) do
-        Path.join(path) <> "?" <> URI.encode_query(query_params)
+      defp redirect_to_shopify_admin(conn, shop) do
+        shop_url = Shopifex.Shops.get_url(shop)
+        api_key = Application.fetch_env!(:shopifex, :api_key)
+
+        url = build_external_url(["https://", shop_url, "/admin/apps", api_key])
+        redirect(conn, external: url)
       end
     end
+  end
+
+  def http_post_oauth(shop_domain, code) do
+    url = build_external_url(["https://", shop_domain, "/admin/oauth/access_token"])
+
+    headers = [
+      "Content-Type": "application/json",
+      Accept: "application/json"
+    ]
+
+    body = %{
+      client_id: Application.fetch_env!(:shopifex, :api_key),
+      client_secret: Application.fetch_env!(:shopifex, :secret),
+      code: code
+    }
+
+    HTTPoison.post(url, Jason.encode!(body), headers)
+  end
+
+  def build_external_url(path, query_params \\ %{}) do
+    Path.join(path) <> "?" <> URI.encode_query(query_params)
   end
 end
