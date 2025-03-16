@@ -185,7 +185,7 @@ defmodule ShopifexWeb.AuthController do
             args = Jason.decode!(response.body, keys: :atoms)
 
             args =
-              params
+              args
               |> Map.put(:url, shop_url)
               |> Map.put(Shopifex.Shops.get_scope_field(), args[:scope])
 
