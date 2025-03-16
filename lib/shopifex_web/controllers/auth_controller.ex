@@ -30,7 +30,7 @@ defmodule ShopifexWeb.AuthController do
         super(conn, shop, oauth_state)
       end
   """
-  @callback after_callback(Plug.Conn.t(), shop(), oauth_state :: String.t()) :: Plug.Conn.t()
+  @callback after_callback(Plug.Conn.t(), shop(), params :: map()) :: Plug.Conn.t()
 
   @doc """
   An optional callback called after the installation is completed, the shop is
@@ -172,35 +172,39 @@ defmodule ShopifexWeb.AuthController do
       end
 
       @impl ShopifexWeb.AuthController
-      def after_callback(conn, shop, _state) do
-        redirect_to_shopify_admin(conn, shop)
+      def after_callback(conn, _shop, %{} = params) do
+        redirect_to_shopify_host(conn, params.host)
       end
 
       def callback(conn, %{"code" => code, "shop" => shop_url} = params) do
+        host = Map.fetch!(params, "host")
         state = Map.get(params, "state", "")
 
         case http_post_oauth(shop_url, code) do
           {:ok, response} ->
-            params = Jason.decode!(response.body, keys: :atoms)
+            args = Jason.decode!(response.body, keys: :atoms)
 
-            params =
+            args =
               params
               |> Map.put(:url, shop_url)
-              |> Map.put(Shopifex.Shops.get_scope_field(), params[:scope])
+              |> Map.put(Shopifex.Shops.get_scope_field(), args[:scope])
 
             shop =
               case Shopifex.Shops.get_shop_by_url(shop_url) do
                 nil ->
-                  insert_shop(params)
+                  insert_shop(args)
 
                 %_{} = shop ->
-                  params = Map.drop(params, :url)
-                  update_shop(shop, params)
+                  args = Map.drop(args, :url)
+                  update_shop(shop, args)
               end
 
             Shopifex.Shops.configure_webhooks(shop)
 
-            after_callback(conn, shop, state)
+            after_callback(conn, shop, %{
+              state: state,
+              host: host
+            })
 
           error ->
             raise Shopifex.InstallError, message: "Installation failed for shop #{shop_url}"
@@ -279,6 +283,14 @@ defmodule ShopifexWeb.AuthController do
         api_key = Application.fetch_env!(:shopifex, :api_key)
 
         url = build_external_url(["https://", shop_url, "/admin/apps", api_key])
+        redirect(conn, external: url)
+      end
+
+      defp redirect_to_shopify_host(conn, base64_host) do
+        api_key = Application.fetch_env!(:shopifex, :api_key)
+        shop_url = Base.decode64!(base64_host)
+
+        url = build_external_url(["https://", shop_url, "/apps", api_key])
         redirect(conn, external: url)
       end
     end
