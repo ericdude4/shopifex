@@ -181,9 +181,10 @@ defmodule ShopifexWeb.AuthController do
 
         case http_post_oauth(shop_url, code) do
           {:ok, response} ->
+            params = Jason.decode!(response.body, keys: :atoms)
+
             params =
-              response.body
-              |> Jason.decode!(keys: :atoms)
+              params
               |> Map.put(:url, shop_url)
               |> Map.put(Shopifex.Shops.get_scope_field(), params[:scope])
 
@@ -216,9 +217,10 @@ defmodule ShopifexWeb.AuthController do
 
         case http_post_oauth(shop_url, code) do
           {:ok, response} ->
+            params = Jason.decode!(params, keys: :atoms)
+
             params =
-              response.body
-              |> Jason.decode!(keys: :atoms)
+              params
               |> Map.put(:url, shop_url)
               |> Map.put(Shopifex.Shops.get_scope_field(), params[:scope])
 
@@ -248,10 +250,8 @@ defmodule ShopifexWeb.AuthController do
 
         case http_post_oauth(shop_url, code) do
           {:ok, response} ->
-            params =
-              response.body
-              |> Jason.decode!(keys: :atoms)
-              |> Map.put(Shopifex.Shops.get_scope_field(), params[:scope])
+            params = Jason.decode!(params, keys: :atoms)
+            params = Map.put(params, Shopifex.Shops.get_scope_field(), params[:scope])
 
             shop =
               shop_url
