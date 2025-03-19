@@ -132,7 +132,7 @@ defmodule ShopifexWeb.Routes do
         unquote(base_routes)
 
         scope "/auth" do
-          pipe_through [:shopifex_browser, :shopify_session]
+          pipe_through [:shopifex_browser, :validate_install_hmac]
 
           get "/callback", unquote(controller), :callback
         end
