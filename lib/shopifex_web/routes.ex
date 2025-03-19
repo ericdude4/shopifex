@@ -113,27 +113,35 @@ defmodule ShopifexWeb.Routes do
     cli? = Keyword.get(opts, :cli, false)
 
     quote do
+      scope "/initialize-installation" do
+        pipe_through [:shopifex_browser]
+
+        get "/", unquote(controller), :initialize_installation
+      end
+
       scope "/auth" do
         pipe_through [:shopifex_browser, :shopify_session]
 
         get "/", unquote(controller), :auth
       end
+    end
 
-      scope "/auth" do
-        pipe_through [:shopifex_browser, :validate_install_hmac]
+    if cli? do
+      quote do
+        scope "/auth" do
+          pipe_through [:shopifex_browser, :shopify_session]
 
-        if unquote(cli?) do
           get "/callback", unquote(controller), :callback
-        else
+        end
+      end
+    else
+      quote do
+        scope "/auth" do
+          pipe_through [:shopifex_browser, :validate_install_hmac]
+
           get "/install", unquote(controller), :install
           get "/update", unquote(controller), :update
         end
-      end
-
-      scope "/initialize-installation" do
-        pipe_through [:shopifex_browser]
-
-        get "/", unquote(controller), :initialize_installation
       end
     end
   end
