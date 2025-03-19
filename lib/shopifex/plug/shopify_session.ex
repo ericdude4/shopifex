@@ -79,12 +79,20 @@ defmodule Shopifex.Plug.ShopifySession do
   end
 
   defp respond_invalid(conn) do
+    web_module = get_web_module(Application.get_env(:shopifex, :custom_select_store, false))
+
     conn
-    |> put_view(ShopifexWeb.AuthView)
-    |> put_layout({ShopifexWeb.LayoutView, "app.html"})
+    |> put_view(web_module.AuthView)
+    |> put_layout({web_module.LayoutView, "app.html"})
     |> render("select-store.html")
     |> halt()
   end
+
+  defp get_web_module(true),
+    do: Application.get_env(:shopifex, :web_module)
+
+  defp get_web_module(_),
+    do: ShopifexWeb
 
   defp get_locale(conn, token_claims \\ %{})
   defp get_locale(%Plug.Conn{params: %{"locale" => locale}}, _token_claims), do: locale
