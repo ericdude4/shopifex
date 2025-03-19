@@ -117,6 +117,7 @@ defmodule ShopifexWeb.AuthController do
         only: [
           build_external_url: 1,
           build_external_url: 2,
+          embedded_app_uri: 1,
           http_post_oauth: 2
         ]
 
@@ -145,17 +146,31 @@ defmodule ShopifexWeb.AuthController do
             })
           end
 
+          # Escape the iframe for embedded apps
+          # https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens/authorization-code-grant#check-for-and-escape-the-iframe-embedded-apps-only
+          redirect_to = fn external_url ->
+            if Map.get(params, "embedded") == "1" do
+              conn
+              |> put_view(ShopifexWeb.PageView)
+              |> put_layout({ShopifexWeb.LayoutView, "app.html"})
+              |> render("redirect.html", redirect_location: external_url, message: "")
+              |> halt()
+            else
+              redirect(conn, external: external_url)
+            end
+          end
+
           # check if store is in the system already:
           case Shopifex.Shops.get_shop_by_url(shop_url) do
             nil ->
               Logger.info("Initiating shop installation for #{shop_url}")
               install_url = url.(Application.fetch_env!(:shopifex, :redirect_uri))
-              redirect(conn, external: install_url)
+              redirect_to.(install_url)
 
             shop ->
-              Logger.info("Initiating shop reinstallation for #{shop_url}")
+              Logger.info("Initiating shop re-installation for #{shop_url}")
               reinstall_url = url.(Application.fetch_env!(:shopifex, :reinstall_uri))
-              redirect(conn, external: reinstall_url)
+              redirect_to.(reinstall_url)
           end
         else
           conn
@@ -172,8 +187,10 @@ defmodule ShopifexWeb.AuthController do
       end
 
       @impl ShopifexWeb.AuthController
-      def after_callback(conn, _shop, %{} = params) do
-        redirect_to_shopify_host(conn, params.host)
+      def after_callback(conn, shop, %{} = params) do
+        conn
+        |> Plug.Conn.assign(:shop, shop)
+        |> redirect_to_app(params.host)
       end
 
       def callback(conn, %{"code" => code, "shop" => shop_url} = params) do
@@ -286,14 +303,24 @@ defmodule ShopifexWeb.AuthController do
         redirect(conn, external: url)
       end
 
-      defp redirect_to_shopify_host(conn, base64_host) do
-        api_key = Application.fetch_env!(:shopifex, :api_key)
-        shop_url = Base.decode64!(base64_host)
+      defp redirect_to_app(conn, base64_host) do
+        host = Base.decode64!(base64_host, padding: false)
 
-        url = build_external_url(["https://", shop_url, "/apps", api_key])
-        redirect(conn, external: url)
+        embedded_app_url =
+          host
+          |> embedded_app_uri()
+          |> URI.append_path("/")
+          |> URI.to_string()
+
+        redirect(conn, external: embedded_app_url)
       end
     end
+  end
+
+  @spec embedded_app_uri(String.t()) :: URI.t()
+  def embedded_app_uri(host) do
+    api_key = Application.fetch_env!(:shopifex, :api_key)
+    URI.new!("https://#{host}/apps/#{api_key}")
   end
 
   def http_post_oauth(shop_domain, code) do
