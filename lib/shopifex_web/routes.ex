@@ -112,22 +112,25 @@ defmodule ShopifexWeb.Routes do
   defmacro auth_routes(controller \\ ShopifexWeb.AuthController, opts \\ []) do
     cli? = Keyword.get(opts, :cli, false)
 
-    quote do
-      scope "/initialize-installation" do
-        pipe_through [:shopifex_browser]
+    base_routes =
+      quote do
+        scope "/initialize-installation" do
+          pipe_through [:shopifex_browser]
 
-        get "/", unquote(controller), :initialize_installation
+          get "/", unquote(controller), :initialize_installation
+        end
+
+        scope "/auth" do
+          pipe_through [:shopifex_browser, :shopify_session]
+
+          get "/", unquote(controller), :auth
+        end
       end
-
-      scope "/auth" do
-        pipe_through [:shopifex_browser, :shopify_session]
-
-        get "/", unquote(controller), :auth
-      end
-    end
 
     if cli? do
       quote do
+        unquote(base_routes)
+
         scope "/auth" do
           pipe_through [:shopifex_browser, :shopify_session]
 
@@ -136,6 +139,8 @@ defmodule ShopifexWeb.Routes do
       end
     else
       quote do
+        unquote(base_routes)
+
         scope "/auth" do
           pipe_through [:shopifex_browser, :validate_install_hmac]
 
