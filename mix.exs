@@ -54,7 +54,7 @@ defmodule Shopifex.MixProject do
       {:phoenix_html_helpers, "~> 1.0"},
       {:phoenix_ecto, "~> 4.4"},
       {:phoenix_view, "~> 2.0"},
-      {:ecto_sql, "~> 3.7"},
+      {:ecto_sql, "~> 3.12"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, ">= 4.0.0"},
       {:gettext, "~> 0.11"},

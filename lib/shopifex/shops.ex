@@ -110,7 +110,10 @@ defmodule Shopifex.Shops do
   Returns a list of webhooks which were created.
   """
   def configure_webhooks(shop) do
-    with {:ok, current_webhooks} <- get_current_webhooks(shop) do
+    configured_webhook_topics = Application.get_env(:shopifex, :webhook_topics)
+
+    with {:webhooks, [_ | _]} <- {:webhooks, configured_webhook_topics},
+         {:ok, current_webhooks} <- get_current_webhooks(shop) do
       current_webhook_topics = Enum.map(current_webhooks, & &1.topic)
 
       Logger.info(
@@ -118,8 +121,7 @@ defmodule Shopifex.Shops do
       )
 
       current_webhook_topics = MapSet.new(current_webhook_topics)
-
-      topics = MapSet.new(Application.fetch_env!(:shopifex, :webhook_topics))
+      topics = MapSet.new(configured_webhook_topics)
 
       # Make sure all the required topics are conifgured.
       subscribe_to_topics = MapSet.difference(topics, current_webhook_topics)
@@ -136,6 +138,16 @@ defmodule Shopifex.Shops do
             acc
         end
       end)
+    else
+      {:webhooks, nil} ->
+        Logger.info(
+          "Missing webhook_topics configuration, assuming webhooks will be managed through the Shopify CLI."
+        )
+
+        {:ok, []}
+
+      fallback ->
+        fallback
     end
   end
 
