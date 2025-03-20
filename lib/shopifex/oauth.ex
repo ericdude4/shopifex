@@ -2,14 +2,13 @@ defmodule Shopifex.OAuth do
   @moduledoc """
   Shopify OAuth related functions.
   """
-  alias Plug.Conn
 
   @doc """
-  Redirects the user to the Shopify OAuth page.
+  Returns an url to redirect the user to the Shopify OAuth page.
   Shopify docs: <https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens/authorization-code-grant#redirect-to-the-authorization-code-flow>
   """
-  @spec redirect_to_oauth(Conn.t(), String.t(), Keyword.t()) :: Conn.t()
-  def redirect_to_oauth(%Conn{} = conn, shop_url, opts \\ []) do
+  @spec oauth_redirect_url(String.t(), Keyword.t()) :: String.t()
+  def oauth_redirect_url(shop_url, opts \\ []) do
     redirect_uri =
       Keyword.get(opts, :redirect_uri, Application.fetch_env!(:shopifex, :redirect_uri))
 
@@ -21,25 +20,10 @@ defmodule Shopifex.OAuth do
         state: Keyword.get(opts, :state, "")
       })
 
-    # The installation case and reinstallation case share the same URL, and query parameters,
-    # except for the value of of the redirect_uri
-    oauth_url =
-      "https://#{shop_url}/admin/oauth/authorize"
-      |> URI.new!()
-      |> URI.append_query(query_params)
-      |> URI.to_string()
-
-    # Escape the iframe for embedded apps
-    # https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens/authorization-code-grant#check-for-and-escape-the-iframe-embedded-apps-only
-    if Map.get(conn.params, "embedded") == "1" do
-      conn
-      |> Phoenix.Controller.put_layout(html: {ShopifexWeb.LayoutView, :app})
-      |> Phoenix.Controller.put_view(ShopifexWeb.PageView)
-      |> Phoenix.Controller.render("redirect.html", redirect_location: oauth_url, message: "")
-      |> Plug.Conn.halt()
-    else
-      Phoenix.Controller.redirect(conn, external: oauth_url)
-    end
+    "https://#{shop_url}/admin/oauth/authorize"
+    |> URI.new!()
+    |> URI.append_query(query_params)
+    |> URI.to_string()
   end
 
   @doc """

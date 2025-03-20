@@ -113,10 +113,7 @@ defmodule ShopifexWeb.AuthController do
 
   defmacro __using__(_opts) do
     quote do
-      import ShopifexWeb.AuthController,
-        only: [
-          embedded_app_uri: 1
-        ]
+      import ShopifexWeb.AuthController, only: [embedded_app_uri: 1]
 
       require Logger
 
@@ -135,14 +132,14 @@ defmodule ShopifexWeb.AuthController do
             nil ->
               Logger.info("Initiating shop installation for #{shop_url}")
 
-              Shopifex.OAuth.redirect_to_oauth(conn, shop_url,
+              redirect_to_oauth(conn, shop_url,
                 redirect_uri: Application.fetch_env!(:shopifex, :redirect_uri)
               )
 
             shop ->
               Logger.info("Initiating shop re-installation for #{shop_url}")
 
-              Shopifex.OAuth.redirect_to_oauth(conn, shop_url,
+              redirect_to_oauth(conn, shop_url,
                 redirect_uri: Application.fetch_env!(:shopifex, :reinstall_uri)
               )
           end
@@ -280,6 +277,21 @@ defmodule ShopifexWeb.AuthController do
           |> URI.to_string()
 
         redirect(conn, external: embedded_app_url)
+      end
+
+      defp redirect_to_oauth(conn, shop_url, opts \\ []) do
+        oauth_url = Shopifex.OAuth.oauth_redirect_url(shop_url, opts)
+
+        # Escape the iframe for embedded apps
+        # https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens/authorization-code-grant#check-for-and-escape-the-iframe-embedded-apps-only
+        if Map.get(conn.params, "embedded") == "1" do
+          conn
+          |> put_layout(html: {ShopifexWeb.LayoutView, :app})
+          |> put_view(ShopifexWeb.PageView)
+          |> render("redirect.html", redirect_location: oauth_url, message: "")
+        else
+          redirect(conn, external: oauth_url)
+        end
       end
 
       defoverridable after_callback: 3,
