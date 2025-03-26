@@ -348,3 +348,118 @@ window.app = createApp({
 const sessionData = await instance.get('/api/initialize');
 // Now you will have access to the current shop and Bob's-yer-uncle!
 ```
+
+## Using Shopifex with Shopify CLI
+
+Use the Shopify CLI to simplify the setup process and avoid manual configuration of URLs and environment variables.
+
+For more details on using the Shopify CLI, refer to the [Shopify CLI documentation](https://shopify.dev/docs/api/shopify-cli).
+
+### Folder Structure
+
+Your project structure should look something like this:
+
+```md
+- phx/       # Phoenix app
+- shopify/   # Shopify cli (`shopify app init`) generated contents
+```
+
+### Shopify CLI Configuration
+
+1. Modify the existing `shopify.app.toml` file in the `shopify/` folder to include the following configuration. This ensures that Cloudflare tunnels are automatically updated during development:
+
+```toml
+[build]
+automatically_update_urls_on_dev = true
+```
+
+2. Create a `shopify.web.toml` file in the `shopify/web/` folder. This ensures that the Shopify CLI starts your Phoenix app when running `shopify app dev`.
+
+```toml
+name = "phx"
+roles = ["backend", "frontend"]
+port = 4000
+
+webhooks_path = "/shopify/webhooks"
+
+[commands]
+dev = "./start.sh"
+```
+
+3. Add the following `start.sh` script to the `shopify/web/` folder to start your Phoenix server:
+
+```bash
+#!/bin/bash
+
+# Navigate to the phoenix directory
+cd ./../phx
+
+# Available environment variables
+# https://shopify.dev/docs/apps/build/cli-for-apps/migrate-to-latest-cli#provided-variables
+echo "[start.sh] Served from: '$HOST'"
+echo "[start.sh] Enabled API scopes: '$SCOPES'"
+
+# Start the Phoenix server
+mix phx.server
+```
+
+### Configuring Phoenix with Shopify CLI
+
+The Shopify CLI sets certain environment variables that can be used to configure your Phoenix app dynamically. Update your `runtime.exs` file to use these variables:
+
+```elixir
+# filepath: phx/config/runtime.exs
+import Config
+
+if config_env() != :test do
+  shopify_api_key = System.get_env("SHOPIFY_API_KEY")
+  shopify_api_secret = System.get_env("SHOPIFY_API_SECRET")
+  shopify_api_scopes = System.get_env("SCOPES")
+
+  confs = %{
+    "SHOPIFY_API_KEY" => shopify_api_key,
+    "SHOPIFY_API_SECRET" => shopify_api_secret,
+    "SCOPES" => shopify_api_scopes
+  }
+
+  for {conf_key, conf_value} <- confs do
+    if is_nil(conf_value) do
+      Logger.warning("""
+      environment variable #{conf_key} is missing.
+      In development this is automatically set when running `shopify app dev`
+      """)
+    end
+  end
+
+  config :shopifex,
+    api_key: shopify_api_key,
+    secret: shopify_api_secret,
+    scopes: shopify_api_scopes
+end
+
+if host = System.get_env("HOST") do
+  # Support proxy URLs `HOST` is set by the Shopify CLI when running the dev command
+  {:ok, host_uri} = URI.new(host)
+
+  config :shopifex,
+    redirect_uri: host_uri |> URI.append_path("/auth/callback") |> URI.to_string(),
+    reinstall_uri: host_uri |> URI.append_path("/auth/calback") |> URI.to_string(),
+    webhook_uri: host_uri |> URI.append_path("/shopify/webhooks") |> URI.to_string(),
+    payment_redirect_uri: host_uri |> URI.append_path("/shopify/payments") |> URI.to_string()
+end
+```
+
+### Starting the Development Environment
+
+1. Navigate to the `shopify/` folder.
+2. Run the following command to start the Shopify development environment:
+
+```sh
+shopify app dev
+```
+
+This command will:
+
+- Set up a Cloudflare proxy for your app
+- Set environment variables required for your app
+- Start your Phoenix server

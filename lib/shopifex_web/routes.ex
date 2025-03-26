@@ -101,22 +101,52 @@ defmodule ShopifexWeb.Routes do
     end
   end
 
-  defmacro auth_routes(controller \\ ShopifexWeb.AuthController) do
-    quote do
-      scope "/auth" do
-        pipe_through([:shopifex_browser, :shopify_session])
-        get("/", unquote(controller), :auth)
+  @doc """
+  Injects the standard Shopify auth routes which your app will need.
+
+  ## Options
+
+  - `:cli` - If true, the callback route will be `/auth/callback` instead of `/auth/install`.
+
+  """
+  defmacro auth_routes(controller \\ ShopifexWeb.AuthController, opts \\ []) do
+    cli? = Keyword.get(opts, :cli, false)
+
+    base_routes =
+      quote do
+        scope "/initialize-installation" do
+          pipe_through [:shopifex_browser]
+
+          get "/", unquote(controller), :initialize_installation
+        end
+
+        scope "/auth" do
+          pipe_through [:shopifex_browser, :shopify_session]
+
+          get "/", unquote(controller), :auth
+        end
       end
 
-      scope "/auth" do
-        pipe_through([:shopifex_browser, :validate_install_hmac])
-        get("/install", unquote(controller), :install)
-        get("/update", unquote(controller), :update)
-      end
+    if cli? do
+      quote do
+        unquote(base_routes)
 
-      scope "/initialize-installation" do
-        pipe_through([:shopifex_browser])
-        get("/", unquote(controller), :initialize_installation)
+        scope "/auth" do
+          pipe_through [:shopifex_browser, :validate_install_hmac]
+
+          get "/callback", unquote(controller), :callback
+        end
+      end
+    else
+      quote do
+        unquote(base_routes)
+
+        scope "/auth" do
+          pipe_through [:shopifex_browser, :validate_install_hmac]
+
+          get "/install", unquote(controller), :install
+          get "/update", unquote(controller), :update
+        end
       end
     end
   end
