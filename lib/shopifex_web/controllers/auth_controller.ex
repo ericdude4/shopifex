@@ -168,7 +168,7 @@ defmodule ShopifexWeb.AuthController do
         host = Map.fetch!(params, "host")
         state = Map.get(params, "state", "")
 
-        case Shopifex.OAuth.post_access_token(shop_url, code) do
+        case Shopifex.OAuth.exchange_code_for_access_token(shop_url, code) do
           {:ok, response} ->
             args = Jason.decode!(response.body, keys: :atoms)
 
@@ -207,7 +207,7 @@ defmodule ShopifexWeb.AuthController do
       def install(conn, %{"code" => code, "shop" => shop_url} = params) do
         state = Map.get(params, "state", "")
 
-        case Shopifex.OAuth.post_access_token(shop_url, code) do
+        case Shopifex.OAuth.exchange_code_for_access_token(shop_url, code) do
           {:ok, response} ->
             params = Jason.decode!(params, keys: :atoms)
 
@@ -240,7 +240,7 @@ defmodule ShopifexWeb.AuthController do
       def update(conn, %{"code" => code, "shop" => shop_url} = params) do
         state = Map.get(params, "state", "")
 
-        case Shopifex.OAuth.post_access_token(shop_url, code) do
+        case Shopifex.OAuth.exchange_code_for_access_token(shop_url, code) do
           {:ok, response} ->
             params = Jason.decode!(params, keys: :atoms)
             params = Map.put(params, Shopifex.Shops.get_scope_field(), params[:scope])

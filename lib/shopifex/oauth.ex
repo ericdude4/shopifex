@@ -30,9 +30,9 @@ defmodule Shopifex.OAuth do
   Calls the Shopify OAuth endpoint to get the access token.
   Shopify docs: <https://shopify.dev/docs/apps/build/authentication-authorization/access-tokens/authorization-code-grant#step-4-get-an-access-token>
   """
-  @spec post_access_token(String.t(), String.t()) ::
+  @spec exchange_code_for_access_token(String.t(), String.t()) ::
           {:ok, HTTPoison.Response.t()} | {:error, HTTPoison.Error.t()}
-  def post_access_token(shop_domain, code) do
+  def exchange_code_for_access_token(shop_domain, code) do
     headers = [
       "Content-Type": "application/json",
       Accept: "application/json"
