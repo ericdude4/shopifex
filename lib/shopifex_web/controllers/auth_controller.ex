@@ -304,8 +304,8 @@ defmodule ShopifexWeb.AuthController do
   end
 
   @spec embedded_app_uri(String.t()) :: URI.t()
-  def embedded_app_uri(host) do
+  def embedded_app_uri(shop_url) do
     api_key = Application.fetch_env!(:shopifex, :api_key)
-    URI.new!("https://#{host}/apps/#{api_key}")
+    URI.new!("https://#{shop_url}/apps/#{api_key}")
   end
 end
