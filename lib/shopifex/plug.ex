@@ -36,7 +36,9 @@ defmodule Shopifex.Plug do
   def current_shopify_host(%Plug.Conn{private: %{shopifex: %{shopify_host: shopify_host}}}),
     do: shopify_host
 
-  def current_shopify_host(_), do: nil
+  def current_shopify_host(conn) do
+    Map.get(conn.params, "host")
+  end
 
   @doc """
   Returns the token for the current session in a plug which has
