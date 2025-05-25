@@ -91,38 +91,23 @@ defmodule Shopifex.Plug do
   end
 
   @spec build_hmac(conn :: Plug.Conn.t()) :: String.t()
-  def build_hmac(%Plug.Conn{method: "GET"} = conn) do
+  def build_hmac(%Plug.Conn{query_params: %{"hmac" => _}} = conn) do
     # hmac param takes precedence and is present in App load requests.
+    conn.query_params
+    |> Map.delete("hmac")
+    |> query_string_hmac("&")
+  end
+
+  def build_hmac(%Plug.Conn{query_params: %{"signature" => _}} = conn) do
     # signature param is present in Shopify App proxy requests https://shopify.dev/apps/online-store/app-proxies
-    {signature_param, query_string_joiner} =
-      if Map.has_key?(conn.query_params, "hmac"), do: {"hmac", "&"}, else: {"signature", ""}
+    conn.query_params
+    |> Map.delete("signature")
+    |> query_string_hmac()
+  end
 
-    query_string =
-      conn.query_params
-      |> Map.delete(signature_param)
-      |> Enum.map_join(query_string_joiner, fn
-        {"ids", value} ->
-          # This absolutely rediculous solution: https://community.shopify.com/c/Shopify-Apps/Hmac-Verification-for-Bulk-Actions/m-p/590611#M18504
-          ids =
-            Enum.map(value, fn id ->
-              "\"#{id}\""
-            end)
-            |> Enum.join(", ")
-
-          "ids=[#{ids}]"
-
-        {key, value} ->
-          "#{key}=#{value}"
-      end)
-
-    :crypto.mac(
-      :hmac,
-      :sha256,
-      Application.fetch_env!(:shopifex, :secret),
-      query_string
-    )
-    |> Base.encode16()
-    |> String.downcase()
+  def build_hmac(%Plug.Conn{method: "GET"} = conn) do
+    conn.query_params
+    |> query_string_hmac()
   end
 
   def build_hmac(%Plug.Conn{method: "POST"} = conn) do
@@ -147,5 +132,32 @@ defmodule Shopifex.Plug do
     else
       _ -> nil
     end
+  end
+
+  defp query_string_hmac(query_params, joiner \\ "") do
+    query_string =
+      query_params
+      |> Enum.map_join(joiner, fn
+        {"ids", value} ->
+          # This absolutely ridiculous solution: https://community.shopify.com/c/Shopify-Apps/Hmac-Verification-for-Bulk-Actions/m-p/590611#M18504
+          ids =
+            Enum.map(value, fn id ->
+              "\"#{id}\""
+            end)
+            |> Enum.join(", ")
+
+          "ids=[#{ids}]"
+
+        {key, value} ->
+          "#{key}=#{value}"
+      end)
+
+    :crypto.mac(
+      :hmac,
+      :sha256,
+      Application.fetch_env!(:shopifex, :secret),
+      query_string
+    )
+    |> Base.encode16(case: :lower)
   end
 end
