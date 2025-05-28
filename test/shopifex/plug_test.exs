@@ -46,6 +46,22 @@ defmodule Shopifex.PlugTest do
                })
     end
 
+    test "GET request build hash for list of ids with hmac query param" do
+      assert "ac63a0487ee1ea0a1ea46ac4d2aa59c6c34c8be2c86445c8c13c420141ed8bfd" =
+               Shopifex.Plug.build_hmac(%Plug.Conn{
+                 method: "GET",
+                 query_params: %{
+                   "hmac" => "foobar",
+                   "logged_in_customer_id" => "",
+                   "path_prefix" => "/apps/fw-cart-redirect-page",
+                   "shop" => "shopifex.myshopify.com",
+                   "ids" => ["1234", "5678"],
+                   "signature" => "a signature to ensure that hmac takes precedence",
+                   "timestamp" => "1667857512"
+                 }
+               })
+    end
+
     test "POST request build hash with assigned raw_body" do
       assert "yjgox9rf6sy058r98v06zcrhbw7tlcryrf12e7rmkou=" =
                %Plug.Conn{method: "POST"}
