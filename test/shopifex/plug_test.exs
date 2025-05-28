@@ -52,6 +52,21 @@ defmodule Shopifex.PlugTest do
                |> Plug.Conn.assign(:raw_body, "{\"foo\": \"bar\"}")
                |> Shopifex.Plug.build_hmac()
     end
+
+    test "POST with signature query param" do
+      assert "3cf1f3876199f1b4254ff0f6a2d1e867e8ea5c0555ccff923c74547ae4da414b" =
+               Shopifex.Plug.build_hmac(%Plug.Conn{
+                 method: "POST",
+                 query_params: %{
+                   "logged_in_customer_id" => "",
+                   "path_prefix" => "/apps/fw-cart-redirect-page",
+                   "shop" => "shopifex.myshopify.com",
+                   "signature" =>
+                     "5056c56d0cfa96fc37683faa5653af2ff5412ea4dd5233db139367010999f6b5",
+                   "timestamp" => "1667857512"
+                 }
+               })
+    end
   end
 
   describe "get_hmac/1" do
