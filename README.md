@@ -57,7 +57,8 @@ config :shopifex,
   api_key: "shopifyapikey123",
   secret: "shopifyapisecret456",
   webhook_topics: ["app/uninstalled"], # These are automatically subscribed on a store upon install
-  allowed_drift: 10_000 # session token exp/nbf tolerance in ms (defaults to 10s)
+  allowed_drift: 10_000, # session token exp/nbf tolerance in ms (defaults to 10s)
+  custom_select_store: true # Allows to display a custom view when user enters the application outside Shopify (defaults to false)
 ```
 
 Update your `endpoint.ex` to include the custom body parser. This is necessary for HMAC validation to work.
