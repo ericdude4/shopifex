@@ -58,6 +58,7 @@ config :shopifex,
   secret: "shopifyapisecret456",
   webhook_topics: ["app/uninstalled"], # These are automatically subscribed on a store upon install
   allowed_drift: 10_000 # session token exp/nbf tolerance in ms (defaults to 10s)
+  shops_context_client: Shopifex.ShopsContextClient # Optional. Overridable context module which Shopifex uses to fetch and manage common app state
 ```
 
 Update your `endpoint.ex` to include the custom body parser. This is necessary for HMAC validation to work.
