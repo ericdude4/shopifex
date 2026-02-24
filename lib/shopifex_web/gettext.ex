@@ -5,7 +5,7 @@ defmodule ShopifexWeb.Gettext do
   By using [Gettext](https://hexdocs.pm/gettext),
   your module gains a set of macros for translations, for example:
 
-      import ShopifexWeb.Gettext
+      use Gettext, backend: ShopifexWeb.Gettext
 
       # Simple translation
       gettext("Here is the string to translate")
@@ -22,5 +22,5 @@ defmodule ShopifexWeb.Gettext do
 
   Please help me internationalize this package!
   """
-  use Gettext, otp_app: :shopifex
+  use Gettext.Backend, otp_app: :shopifex
 end
