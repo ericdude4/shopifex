@@ -1,7 +1,7 @@
 defmodule Shopifex.Shops do
   @moduledoc """
   The Shops context. This module calls the default Shopifex.ShopsContextClient, which in turn calls the functions defined in the ShopsContext behaviour.
-  You can swap out the default client for your own implementation by setting the :shops_client config value for the :shopifex app to a module that uses Shopifex.ShopsContext
+  You can swap out the default client for your own implementation by setting the :shops_context_client config value for the :shopifex app to a module that uses Shopifex.ShopsContext
   and overrides various functions.
   """
   def shop_schema(), do: client().shop_schema()
