@@ -3,13 +3,13 @@
     "request": {
       "body": "",
       "headers": {
-        "X-Shopify-Access-Token": "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",
+        "X-Shopify-Access-Token": "foo_dummy_token",
         "Content-Type": "application/json"
       },
       "method": "get",
       "options": [],
       "request_body": "",
-      "url": "https://shopifex-test.myshopify.com/admin/api/2024-01/webhooks.json"
+      "url": "https://shopifex-test.myshopify.com/admin/api/2026-01/webhooks.json"
     },
     "response": {
       "binary": false,
