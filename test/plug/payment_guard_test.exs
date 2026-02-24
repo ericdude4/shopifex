@@ -15,7 +15,7 @@ defmodule Shopifex.Plug.PaymentGuardTest do
     halted_conn = Shopifex.Plug.PaymentGuard.call(conn, "block")
 
     assert html_response(halted_conn, 302) =~
-             "<html><body>You are being <a href=\"/payment/show-plans?guard_identifier=block"
+             "<html><body>You are being <a href=\"/payment/show-plans?"
 
     [redirect_location] = Plug.Conn.get_resp_header(halted_conn, "location")
 

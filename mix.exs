@@ -52,20 +52,20 @@ defmodule Shopifex.MixProject do
     [
       {:phoenix, ">= 1.6.0"},
       {:phoenix_html_helpers, "~> 1.0"},
-      {:phoenix_ecto, "~> 4.4"},
+      {:phoenix_ecto, "~> 4.6"},
       {:phoenix_view, "~> 2.0"},
-      {:ecto_sql, "~> 3.7"},
+      {:ecto_sql, "~> 3.12"},
       {:postgrex, ">= 0.0.0"},
       {:phoenix_html, ">= 4.0.0"},
-      {:gettext, "~> 0.11"},
+      {:gettext, "~> 1.0"},
       {:jason, "~> 1.0"},
       {:plug_cowboy, "~> 2.0"},
       {:ex_doc, "~> 0.14", only: :dev, runtime: false},
       {:guardian, "~> 2.0"},
-      {:neuron, "~> 5.0.0"},
+      {:neuron, "~> 5.1.0"},
       {:cors_plug, "~> 2.0"},
-      {:httpoison, "~> 1.8"},
-      {:exvcr, "~> 0.11", only: :test}
+      {:httpoison, "~> 2.3"},
+      {:exvcr, "~> 0.17", only: :test}
     ]
   end
 

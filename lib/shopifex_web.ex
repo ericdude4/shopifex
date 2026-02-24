@@ -22,9 +22,9 @@ defmodule ShopifexWeb do
 
     quote do
       use Phoenix.Controller, namespace: ShopifexWeb
+      use Gettext, backend: ShopifexWeb.Gettext
 
       import Plug.Conn
-      import ShopifexWeb.Gettext
       alias unquote(web_module).Router.Helpers, as: Routes
     end
   end
@@ -51,12 +51,12 @@ defmodule ShopifexWeb do
       import Phoenix.HTML
       import Phoenix.HTML.Form
       use PhoenixHTMLHelpers
+      use Gettext, backend: ShopifexWeb.Gettext
 
       # Import basic rendering functionality (render, render_layout, etc)
       import Phoenix.View
 
       import ShopifexWeb.ErrorHelpers
-      import ShopifexWeb.Gettext
       alias unquote(web_module).Router.Helpers, as: Routes
     end
   end
