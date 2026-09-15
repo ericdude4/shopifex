@@ -175,6 +175,55 @@ defmodule Shopifex.OAuthTest do
     end
   end
 
+  describe "cycle_offline_access_token/3" do
+    test "exchanges a non-expiring offline token for an expiring pair" do
+      # Independent of the expiring_offline_access_tokens config: expiring is always 1
+      Application.put_env(:shopifex, :expiring_offline_access_tokens, false)
+      OAuthHTTPClient.expect(expiring_response())
+
+      assert {:ok, %{access_token: "shpat_new", refresh_token: "shprt_new"}} =
+               OAuth.cycle_offline_access_token(@shop_url, "shpat_legacy")
+
+      assert [%{url: @token_endpoint, body: body}] = OAuthHTTPClient.requests()
+
+      assert body == %{
+               "client_id" => "thisisafakeapikey",
+               "client_secret" => "shpss_thisisafakesecret",
+               "grant_type" => "urn:ietf:params:oauth:grant-type:token-exchange",
+               "subject_token" => "shpat_legacy",
+               "subject_token_type" => "urn:shopify:params:oauth:token-type:offline-access-token",
+               "requested_token_type" =>
+                 "urn:shopify:params:oauth:token-type:offline-access-token",
+               "expiring" => 1
+             }
+    end
+
+    test "surfaces Shopify's rejection of an unsupported subject token" do
+      OAuthHTTPClient.expect(
+        {:ok, %{status_code: 400, body: ~s({"error":"invalid_subject_token"})}}
+      )
+
+      assert {:error, :invalid_grant, %{"error" => "invalid_subject_token"}} =
+               OAuth.cycle_offline_access_token(@shop_url, "shpat_already_expiring")
+    end
+  end
+
+  describe "upgrade_legacy_tokens_via_session?/0" do
+    test "defaults to true and only false disables it" do
+      previous = Application.get_env(:shopifex, :upgrade_legacy_tokens_via_session)
+
+      on_exit(fn ->
+        Application.put_env(:shopifex, :upgrade_legacy_tokens_via_session, previous)
+      end)
+
+      Application.delete_env(:shopifex, :upgrade_legacy_tokens_via_session)
+      assert OAuth.upgrade_legacy_tokens_via_session?()
+
+      Application.put_env(:shopifex, :upgrade_legacy_tokens_via_session, false)
+      refute OAuth.upgrade_legacy_tokens_via_session?()
+    end
+  end
+
   describe "authorize_url/3" do
     test "builds the OAuth authorize url" do
       assert OAuth.authorize_url(@shop_url, "https://shopifex-dummy.com/auth/update") ==

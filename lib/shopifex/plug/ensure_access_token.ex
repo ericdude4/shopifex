@@ -12,9 +12,14 @@ defmodule Shopifex.Plug.EnsureAccessToken do
   1. If the request carries a Shopify session token (the `id_token` param which
      App Bridge appends when loading an embedded app, or a session token used as
      the `token` param / bearer token), it is exchanged for an expiring offline
-     access token via token exchange. No redirect is required.
+     access token via token exchange. No redirect is required. Disable this
+     step with `config :shopifex, upgrade_legacy_tokens_via_session: false`.
   2. Otherwise the merchant is sent through the Shopify OAuth update flow, the
      same way `Shopifex.Plug.EnsureScopes` does for missing scopes.
+
+  This plug never cycles a non-expiring token directly (see
+  `Shopifex.OAuth.cycle_offline_access_token/3`); that is an explicit,
+  irreversible operation left to the application.
 
   Shops which already hold a refresh token pass through untouched; refreshing
   the hourly access token itself happens lazily in
@@ -63,7 +68,8 @@ defmodule Shopifex.Plug.EnsureAccessToken do
       "Shop #{shop_url} does not hold a valid expiring offline access token, obtaining one"
     )
 
-    with {:ok, session_token} <- session_token(conn, shop_url),
+    with true <- Shopifex.OAuth.upgrade_legacy_tokens_via_session?(),
+         {:ok, session_token} <- session_token(conn, shop_url),
          {:ok, token_params} <- Shopifex.OAuth.exchange_session_token(shop_url, session_token) do
       Logger.info("Obtained expiring offline access token for #{shop_url} via token exchange")
 

@@ -93,6 +93,24 @@ defmodule Shopifex.Plug.EnsureAccessTokenTest do
     assert Shops.get_shop_by_url(shop.url).refresh_token == "shprt_exchanged"
   end
 
+  test "does not exchange the id_token when upgrade_legacy_tokens_via_session is false", %{
+    conn: conn,
+    shop: shop
+  } do
+    Application.put_env(:shopifex, :upgrade_legacy_tokens_via_session, false)
+    on_exit(fn -> Application.delete_env(:shopifex, :upgrade_legacy_tokens_via_session) end)
+
+    conn =
+      conn
+      |> Map.put(:params, %{"id_token" => session_token(shop.url)})
+      |> Shopifex.Plug.EnsureAccessToken.call([])
+
+    assert conn.halted
+    assert conn.assigns.redirect_location =~ "/admin/oauth/authorize"
+    assert OAuthHTTPClient.requests() == []
+    assert Shops.get_shop_by_url(shop.url).access_token == "asdf1234"
+  end
+
   test "ignores Shopifex session tokens which are not Shopify id tokens", %{
     conn: conn,
     shop: shop

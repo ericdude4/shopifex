@@ -60,7 +60,8 @@ config :shopifex,
   allowed_drift: 10_000 # session token exp/nbf tolerance in ms (defaults to 10s)
   shops_context_client: Shopifex.ShopsContextClient # Optional. Overridable context module which Shopifex uses to fetch and manage common app state
   expiring_offline_access_tokens: true, # Optional. Request expiring offline access tokens (required for public apps from January 1, 2027)
-  access_token_refresh_margin: 300 # Optional. Seconds before expiry at which access tokens are refreshed (defaults to 5 minutes)
+  access_token_refresh_margin: 300, # Optional. Seconds before expiry at which access tokens are refreshed (defaults to 5 minutes)
+  upgrade_legacy_tokens_via_session: true # Optional. Let Shopifex.Plug.EnsureAccessToken exchange App Bridge session tokens for legacy shops (defaults to true)
 ```
 
 ### Expiring offline access tokens
@@ -96,6 +97,14 @@ shops whose refresh token was rejected by Shopify.
 When a refresh fails permanently, `get_access_token/1` returns `{:error, reason}`
 and `get_access_token!/1` raises `Shopifex.AccessTokenError`, so background jobs
 fail fast until the merchant re-authorizes the app.
+
+Set `config :shopifex, upgrade_legacy_tokens_via_session: false` if you would
+rather the plug never exchanged session tokens and only used the OAuth update
+flow. To migrate installations without waiting for a merchant, call
+`Shopifex.OAuth.cycle_offline_access_token/3` yourself: it is irreversible and
+not replayable (Shopify destroys the non-expiring token as it issues the new
+pair), so Shopifex never invokes it automatically. Persist the result under
+`Shopifex.Shops.with_access_token_refresh_lock/2` immediately.
 
 Update your `endpoint.ex` to include the custom body parser. This is necessary for HMAC validation to work.
 

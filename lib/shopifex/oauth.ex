@@ -56,6 +56,19 @@ defmodule Shopifex.OAuth do
     do: Application.get_env(:shopifex, :expiring_offline_access_tokens, false) == true
 
   @doc """
+  Whether `Shopifex.Plug.EnsureAccessToken` may upgrade a shop that still holds
+  a legacy non-expiring token by exchanging the merchant's App Bridge session
+  token for an expiring token pair. Defaults to `true`.
+
+  Set `config :shopifex, upgrade_legacy_tokens_via_session: false` to disable
+  that automatic upgrade; the plug then only sends the merchant through the
+  OAuth update flow.
+  """
+  @spec upgrade_legacy_tokens_via_session?() :: boolean()
+  def upgrade_legacy_tokens_via_session?(),
+    do: Application.get_env(:shopifex, :upgrade_legacy_tokens_via_session, true) != false
+
+  @doc """
   Seconds before the access token expiry at which Shopifex will proactively
   refresh it. Defaults to 300 (5 minutes).
 
@@ -126,6 +139,51 @@ defmodule Shopifex.OAuth do
       requested_token_type: @offline_access_token_type
     }
     |> maybe_put_expiring()
+    |> post_token_request(shop_url)
+  end
+
+  @doc """
+  Cycles a legacy **non-expiring** offline access token into an expiring one
+  without merchant involvement, as described in
+  https://shopify.dev/docs/apps/build/authentication-authorization/migrate-to-expiring-offline-access-tokens#cycle-existing-tokens-without-waiting-for-a-merchant
+
+  > #### Irreversible and not replayable {: .error}
+  >
+  > Shopify destroys `non_expiring_access_token` in the same transaction that
+  > issues the expiring pair. If the returned params are not persisted, the shop
+  > has **no** working token and the merchant must re-authorize the app before
+  > it can call the Admin API again. Retrying with the same token fails with
+  > `invalid_subject_token`.
+  >
+  > Shopifex never calls this function on its own. Call it deliberately, one
+  > shop at a time, and persist the result (for example with
+  > `Shopifex.Shops.update_shop/2` and `Shopifex.Shops.token_params_to_shop_params/1`)
+  > inside `Shopifex.Shops.with_access_token_refresh_lock/2` before doing
+  > anything else. Skip shops which already hold a refresh token.
+
+  Online, delegate, scope-restricted and already-expiring tokens are rejected by
+  Shopify with `{:error, :invalid_grant, %{"error" => "invalid_subject_token"}}`.
+
+  ## Options
+
+    * `:client_id` / `:client_secret` - override the app credentials.
+  """
+  @spec cycle_offline_access_token(
+          shop_url :: String.t(),
+          non_expiring_access_token :: String.t(),
+          Keyword.t()
+        ) :: {:ok, token_params()} | error()
+  def cycle_offline_access_token(shop_url, non_expiring_access_token, opts \\ []) do
+    %{
+      client_id: Keyword.get(opts, :client_id, client_id()),
+      client_secret: Keyword.get(opts, :client_secret, client_secret()),
+      grant_type: @token_exchange_grant,
+      subject_token: non_expiring_access_token,
+      subject_token_type: @offline_access_token_type,
+      requested_token_type: @offline_access_token_type,
+      # Required by Shopify for this grant; the whole point is an expiring token.
+      expiring: 1
+    }
     |> post_token_request(shop_url)
   end
 
