@@ -143,27 +143,13 @@ defmodule ShopifexWeb.AuthController do
 
       def install(conn, %{"code" => code, "shop" => shop_url} = params) do
         state = Map.get(params, "state", "")
-        url = build_external_url(["https://", shop_url, "/admin/oauth/access_token"])
 
-        case(
-          HTTPoison.post(
-            url,
-            Jason.encode!(%{
-              client_id: Application.fetch_env!(:shopifex, :api_key),
-              client_secret: Application.fetch_env!(:shopifex, :secret),
-              code: code
-            }),
-            "Content-Type": "application/json",
-            Accept: "application/json"
-          )
-        ) do
-          {:ok, response} ->
+        case Shopifex.OAuth.request_access_token(shop_url, code) do
+          {:ok, token_params} ->
             params =
-              response.body
-              |> Jason.decode!(keys: :atoms)
-              |> Map.put(:url, shop_url)
-
-            params = Map.put(params, Shopifex.Shops.get_scope_field(), params[:scope])
+              token_params
+              |> Shopifex.Shops.token_params_to_shop_params()
+              |> Map.put(Shopifex.Shops.get_url_field(), shop_url)
 
             shop = insert_shop(params)
 
@@ -171,7 +157,11 @@ defmodule ShopifexWeb.AuthController do
 
             after_install(conn, shop, state)
 
-          error ->
+          {:error, reason, details} ->
+            Logger.error(
+              "Installation failed for shop #{shop_url}: #{inspect(reason)} #{inspect(details)}"
+            )
+
             raise(Shopifex.InstallError, message: "Installation failed for shop #{shop_url}")
         end
       end
@@ -187,24 +177,10 @@ defmodule ShopifexWeb.AuthController do
 
       def update(conn, %{"code" => code, "shop" => shop_url} = params) do
         state = Map.get(params, "state", "")
-        url = build_external_url(["https://", shop_url, "/admin/oauth/access_token"])
 
-        case(
-          HTTPoison.post(
-            url,
-            Jason.encode!(%{
-              client_id: Application.fetch_env!(:shopifex, :api_key),
-              client_secret: Application.fetch_env!(:shopifex, :secret),
-              code: code
-            }),
-            "Content-Type": "application/json",
-            Accept: "application/json"
-          )
-        ) do
-          {:ok, response} ->
-            params = Jason.decode!(response.body, keys: :atoms)
-
-            params = Map.put(params, Shopifex.Shops.get_scope_field(), params[:scope])
+        case Shopifex.OAuth.request_access_token(shop_url, code) do
+          {:ok, token_params} ->
+            params = Shopifex.Shops.token_params_to_shop_params(token_params)
 
             shop =
               shop_url
@@ -215,7 +191,11 @@ defmodule ShopifexWeb.AuthController do
 
             after_update(conn, shop, state)
 
-          error ->
+          {:error, reason, details} ->
+            Logger.error(
+              "Update failed for shop #{shop_url}: #{inspect(reason)} #{inspect(details)}"
+            )
+
             raise(Shopifex.UpdateError, message: "Update failed for shop #{shop_url}")
         end
       end

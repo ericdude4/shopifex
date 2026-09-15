@@ -3,7 +3,10 @@ defmodule Mix.Shopifex.Shop do
     do: [
       {:url, :string},
       {:access_token, :string},
-      {:scope, :string}
+      {:scope, :string},
+      {:refresh_token, :string},
+      {:access_token_expires_at, :utc_datetime},
+      {:refresh_token_expires_at, :utc_datetime}
     ]
 
   def assocs(),

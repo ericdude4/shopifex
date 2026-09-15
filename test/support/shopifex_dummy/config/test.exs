@@ -33,7 +33,8 @@ config :shopifex,
   reinstall_uri: "https://shopifex-dummy.com/auth/update",
   webhook_uri: "https://shopifex-dummy.com/webhook",
   api_key: "thisisafakeapikey",
-  secret: "shpss_thisisafakesecret"
+  secret: "shpss_thisisafakesecret",
+  oauth_http_client: ShopifexDummy.OAuthHTTPClient
 
 # Print only warnings and errors during test
 config :logger, level: :warn
