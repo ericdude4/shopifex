@@ -56,17 +56,16 @@ defmodule Shopifex.OAuth do
     do: Application.get_env(:shopifex, :expiring_offline_access_tokens, false) == true
 
   @doc """
-  Whether `Shopifex.Plug.EnsureAccessToken` may upgrade a shop that still holds
-  a legacy non-expiring token by exchanging the merchant's App Bridge session
-  token for an expiring token pair. Defaults to `true`.
+  Whether `Shopifex.Plug.EnsureAccessToken` may obtain an expiring token pair
+  for a shop without a valid refresh token by exchanging the merchant's App
+  Bridge session token. Defaults to `true`.
 
-  Set `config :shopifex, upgrade_legacy_tokens_via_session: false` to disable
-  that automatic upgrade; the plug then only sends the merchant through the
-  OAuth update flow.
+  Set `config :shopifex, exchange_tokens_via_session: false` to disable the
+  exchange; the plug then only sends the merchant through the OAuth update flow.
   """
-  @spec upgrade_legacy_tokens_via_session?() :: boolean()
-  def upgrade_legacy_tokens_via_session?(),
-    do: Application.get_env(:shopifex, :upgrade_legacy_tokens_via_session, true) != false
+  @spec exchange_tokens_via_session?() :: boolean()
+  def exchange_tokens_via_session?(),
+    do: Application.get_env(:shopifex, :exchange_tokens_via_session, true) != false
 
   @doc """
   Seconds before the access token expiry at which Shopifex will proactively

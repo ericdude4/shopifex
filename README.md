@@ -61,7 +61,7 @@ config :shopifex,
   shops_context_client: Shopifex.ShopsContextClient # Optional. Overridable context module which Shopifex uses to fetch and manage common app state
   expiring_offline_access_tokens: true, # Optional. Request expiring offline access tokens (required for public apps from January 1, 2027)
   access_token_refresh_margin: 300, # Optional. Seconds before expiry at which access tokens are refreshed (defaults to 5 minutes)
-  upgrade_legacy_tokens_via_session: true # Optional. Let Shopifex.Plug.EnsureAccessToken exchange App Bridge session tokens for legacy shops (defaults to true)
+  exchange_tokens_via_session: true # Optional. Let Shopifex.Plug.EnsureAccessToken exchange App Bridge session tokens for shops without a valid refresh token (defaults to true)
 ```
 
 ### Expiring offline access tokens
@@ -98,7 +98,7 @@ When a refresh fails permanently, `get_access_token/1` returns `{:error, reason}
 and `get_access_token!/1` raises `Shopifex.AccessTokenError`, so background jobs
 fail fast until the merchant re-authorizes the app.
 
-Set `config :shopifex, upgrade_legacy_tokens_via_session: false` if you would
+Set `config :shopifex, exchange_tokens_via_session: false` if you would
 rather the plug never exchanged session tokens and only used the OAuth update
 flow. To migrate installations without waiting for a merchant, call
 `Shopifex.OAuth.cycle_offline_access_token/3` yourself: it is irreversible and

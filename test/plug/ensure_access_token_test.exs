@@ -93,12 +93,12 @@ defmodule Shopifex.Plug.EnsureAccessTokenTest do
     assert Shops.get_shop_by_url(shop.url).refresh_token == "shprt_exchanged"
   end
 
-  test "does not exchange the id_token when upgrade_legacy_tokens_via_session is false", %{
+  test "does not exchange the id_token when exchange_tokens_via_session is false", %{
     conn: conn,
     shop: shop
   } do
-    Application.put_env(:shopifex, :upgrade_legacy_tokens_via_session, false)
-    on_exit(fn -> Application.delete_env(:shopifex, :upgrade_legacy_tokens_via_session) end)
+    Application.put_env(:shopifex, :exchange_tokens_via_session, false)
+    on_exit(fn -> Application.delete_env(:shopifex, :exchange_tokens_via_session) end)
 
     conn =
       conn

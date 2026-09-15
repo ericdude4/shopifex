@@ -17,7 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `Shopifex.Plug.EnsureAccessToken` (added to the `:shopify_session` and `:shopify_admin_link` pipelines) which upgrades shops without a refresh token via token exchange, falling back to the OAuth update flow.
 - `Shopifex.AccessTokenError`.
 - `config :shopifex, oauth_http_client:` to swap the OAuth HTTP client in tests.
-- `config :shopifex, upgrade_legacy_tokens_via_session: false` to stop `Shopifex.Plug.EnsureAccessToken` from exchanging App Bridge session tokens for legacy shops.
+- `config :shopifex, exchange_tokens_via_session: false` to stop `Shopifex.Plug.EnsureAccessToken` from exchanging App Bridge session tokens for shops without a valid refresh token.
 - `Shopifex.OAuth.cycle_offline_access_token/3` for the explicit, irreversible non-expiring → expiring token cycle. Never called automatically.
 
 ### Changed

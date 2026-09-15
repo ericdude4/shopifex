@@ -208,19 +208,19 @@ defmodule Shopifex.OAuthTest do
     end
   end
 
-  describe "upgrade_legacy_tokens_via_session?/0" do
+  describe "exchange_tokens_via_session?/0" do
     test "defaults to true and only false disables it" do
-      previous = Application.get_env(:shopifex, :upgrade_legacy_tokens_via_session)
+      previous = Application.get_env(:shopifex, :exchange_tokens_via_session)
 
       on_exit(fn ->
-        Application.put_env(:shopifex, :upgrade_legacy_tokens_via_session, previous)
+        Application.put_env(:shopifex, :exchange_tokens_via_session, previous)
       end)
 
-      Application.delete_env(:shopifex, :upgrade_legacy_tokens_via_session)
-      assert OAuth.upgrade_legacy_tokens_via_session?()
+      Application.delete_env(:shopifex, :exchange_tokens_via_session)
+      assert OAuth.exchange_tokens_via_session?()
 
-      Application.put_env(:shopifex, :upgrade_legacy_tokens_via_session, false)
-      refute OAuth.upgrade_legacy_tokens_via_session?()
+      Application.put_env(:shopifex, :exchange_tokens_via_session, false)
+      refute OAuth.exchange_tokens_via_session?()
     end
   end
 
