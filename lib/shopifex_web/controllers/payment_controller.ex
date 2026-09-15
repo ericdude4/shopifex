@@ -127,7 +127,7 @@ defmodule ShopifexWeb.PaymentController do
                },
                url: "https://#{Shopifex.Shops.get_url(shop)}/admin/api/2024-01/graphql.json",
                headers: [
-                 "X-Shopify-Access-Token": shop.access_token,
+                 "X-Shopify-Access-Token": Shopifex.Shops.get_access_token!(shop),
                  "Content-Type": "application/json"
                ]
              ) do
@@ -160,7 +160,7 @@ defmodule ShopifexWeb.PaymentController do
         case HTTPoison.post(
                "https://#{Shopifex.Shops.get_url(shop)}/admin/api/2024-01/recurring_application_charges.json",
                body,
-               "X-Shopify-Access-Token": shop.access_token,
+               "X-Shopify-Access-Token": Shopifex.Shops.get_access_token!(shop),
                "Content-Type": "application/json"
              ) do
           {:ok, resp} ->
@@ -185,7 +185,7 @@ defmodule ShopifexWeb.PaymentController do
         case HTTPoison.post(
                "https://#{Shopifex.Shops.get_url(shop)}/admin/api/2024-01/application_charges.json",
                body,
-               "X-Shopify-Access-Token": shop.access_token,
+               "X-Shopify-Access-Token": Shopifex.Shops.get_access_token!(shop),
                "Content-Type": "application/json"
              ) do
           {:ok, resp} ->

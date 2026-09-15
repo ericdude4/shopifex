@@ -32,7 +32,7 @@ defmodule Shopifex.ShopsContext do
         Map.get(shop, get_scope_field())
       end
 
-      defp get_url_field() do
+      def get_url_field() do
         # TODO: dont check for defaults in v3.0
         if Keyword.has_key?(shop_schema().__info__(:functions), :shopifex_url_field) do
           shop_schema().shopifex_url_field()
@@ -65,6 +65,210 @@ defmodule Shopifex.ShopsContext do
           shop_schema().shopifex_preloads()
         else
           []
+        end
+      end
+
+      defp schema_field(function, default) do
+        if Keyword.has_key?(shop_schema().__info__(:functions), function) do
+          apply(shop_schema(), function, [])
+        else
+          default
+        end
+      end
+
+      def get_refresh_token_field(),
+        do: schema_field(:shopifex_refresh_token_field, :refresh_token)
+
+      def get_access_token_expires_at_field(),
+        do: schema_field(:shopifex_access_token_expires_at_field, :access_token_expires_at)
+
+      def get_refresh_token_expires_at_field(),
+        do: schema_field(:shopifex_refresh_token_expires_at_field, :refresh_token_expires_at)
+
+      @doc """
+      Reloads the shop from the database, bypassing any caching layer in front of
+      `get_shop_by_url/1`. Used before refreshing an access token so that a refresh
+      performed by another process is picked up instead of repeated.
+      """
+      def reload_shop(shop) do
+        shop_schema()
+        |> repo().get_by!(Ecto.primary_key(shop))
+        |> repo().preload(get_preloads())
+      end
+
+      @doc """
+      Returns the stored refresh token for the shop, or `nil` when the shop was
+      installed with a non-expiring offline access token.
+      """
+      def get_refresh_token(shop), do: Map.get(shop, get_refresh_token_field())
+
+      def get_access_token_expires_at(shop),
+        do: Map.get(shop, get_access_token_expires_at_field())
+
+      def get_refresh_token_expires_at(shop),
+        do: Map.get(shop, get_refresh_token_expires_at_field())
+
+      @doc """
+      Whether the shop holds an *expiring* offline access token (i.e. one that
+      was issued with a refresh token).
+      """
+      def expiring_access_token?(shop), do: not is_nil(get_access_token_expires_at(shop))
+
+      @doc """
+      Whether the shop's refresh token is missing or has passed its 90 day expiry.
+      Such shops must go through OAuth again before they can make API calls.
+      """
+      def refresh_token_expired?(shop, now \\ DateTime.utc_now()) do
+        case {get_refresh_token(shop), get_refresh_token_expires_at(shop)} do
+          {nil, _} -> true
+          {_, nil} -> false
+          {_, expires_at} -> DateTime.compare(now, expires_at) != :lt
+        end
+      end
+
+      @doc """
+      Whether the access token is expired, or will expire within `margin` seconds
+      (defaults to `config :shopifex, access_token_refresh_margin`).
+      Non-expiring tokens never expire.
+      """
+      def access_token_expiring?(
+            shop,
+            margin \\ Shopifex.OAuth.access_token_refresh_margin(),
+            now \\ DateTime.utc_now()
+          ) do
+        case get_access_token_expires_at(shop) do
+          nil -> false
+          expires_at -> DateTime.compare(DateTime.add(now, margin, :second), expires_at) != :lt
+        end
+      end
+
+      def access_token_expired?(shop, now \\ DateTime.utc_now()),
+        do: access_token_expiring?(shop, 0, now)
+
+      @doc """
+      Returns `{:ok, shop}` with a usable access token, refreshing the expiring
+      offline access token first when it is expired or about to expire.
+
+      Returns `{:error, reason}` when a refresh was required but failed. When the
+      refresh token was rejected by Shopify (`:invalid_grant`) it is cleared from
+      the shop so that `Shopifex.Plug.EnsureAccessToken` sends the merchant back
+      through OAuth the next time they open the app.
+      """
+      def ensure_fresh_access_token(shop) do
+        if access_token_expiring?(shop) do
+          refresh_access_token(shop)
+        else
+          {:ok, shop}
+        end
+      end
+
+      @doc """
+      Returns `{:ok, access_token}` for the shop, refreshing it first if needed.
+      See `ensure_fresh_access_token/1`.
+      """
+      def get_access_token(shop) do
+        with {:ok, shop} <- ensure_fresh_access_token(shop) do
+          {:ok, shop.access_token}
+        end
+      end
+
+      @doc """
+      Same as `get_access_token/1` but raises `Shopifex.AccessTokenError` when
+      no usable token can be obtained.
+      """
+      def get_access_token!(shop) do
+        case get_access_token(shop) do
+          {:ok, access_token} ->
+            access_token
+
+          {:error, reason} ->
+            raise Shopifex.AccessTokenError, shop_url: get_url(shop), reason: reason
+        end
+      end
+
+      @doc """
+      Refreshes the shop's expiring offline access token and persists the new
+      access token / refresh token pair atomically.
+
+      Refreshes are serialized per shop through `with_access_token_refresh_lock/2`.
+      Inside the lock the shop is reloaded from the database: if another process
+      already rotated the token (the stored access token differs from the one we
+      hold) the reloaded shop is returned without calling Shopify again.
+
+      Returns `{:ok, shop}` or `{:error, reason}`.
+      """
+      def refresh_access_token(shop) do
+        with_access_token_refresh_lock(shop, fn ->
+          reloaded = reload_shop(shop)
+
+          cond do
+            reloaded.access_token != shop.access_token and not access_token_expiring?(reloaded) ->
+              Logger.info("Access token for #{get_url(shop)} was already refreshed elsewhere")
+              {:ok, reloaded}
+
+            refresh_token_expired?(reloaded) ->
+              {:error, :refresh_token_expired}
+
+            true ->
+              do_refresh_access_token(reloaded)
+          end
+        end)
+      end
+
+      defp do_refresh_access_token(shop) do
+        shop_url = get_url(shop)
+
+        case Shopifex.OAuth.refresh_access_token(shop_url, get_refresh_token(shop)) do
+          {:ok, params} ->
+            Logger.info("Refreshed expiring offline access token for #{shop_url}")
+            {:ok, update_shop(shop, token_params_to_shop_params(params))}
+
+          {:error, :invalid_grant, details} ->
+            Logger.error(
+              "Refresh token for #{shop_url} was rejected by Shopify, the shop must re-authorize: #{inspect(details)}"
+            )
+
+            # Clear the refresh token so the shop is sent through OAuth again on
+            # the next app load, and background jobs fail fast instead of
+            # hammering Shopify with a dead refresh token.
+            update_shop(shop, %{get_refresh_token_field() => nil})
+            {:error, :invalid_grant}
+
+          {:error, reason, _details} ->
+            {:error, reason}
+        end
+      end
+
+      @doc """
+      Maps the normalized `Shopifex.OAuth.token_params/1` onto the configured shop
+      schema fields.
+      """
+      def token_params_to_shop_params(params) do
+        shop_params = %{
+          :access_token => params.access_token,
+          get_refresh_token_field() => params[:refresh_token],
+          get_access_token_expires_at_field() => params[:access_token_expires_at],
+          get_refresh_token_expires_at_field() => params[:refresh_token_expires_at]
+        }
+
+        case params[:scope] do
+          nil -> shop_params
+          scope -> Map.put(shop_params, get_scope_field(), scope)
+        end
+      end
+
+      @doc """
+      Serializes access token refreshes for a shop. The default implementation
+      takes a cluster-wide `:global` lock keyed on the shop URL, which is
+      sufficient for BEAM clusters. Override this in your shops context to use a
+      different lock (for example Redis) when your nodes are not clustered.
+      """
+      def with_access_token_refresh_lock(shop, fun) do
+        lock_id = {{Shopifex, :access_token_refresh, get_url(shop)}, self()}
+
+        case :global.trans(lock_id, fun, [node() | Node.list()], :infinity) do
+          :aborted -> {:error, :refresh_lock_aborted}
+          result -> result
         end
       end
 
@@ -144,10 +348,11 @@ defmodule Shopifex.ShopsContext do
       """
       @spec get_current_webhooks(shop :: shop()) :: {:ok, list()} | any()
       def get_current_webhooks(shop) do
-        with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
+        with {:ok, access_token} <- get_access_token(shop),
+             {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
                HTTPoison.get(
                  "https://#{get_url(shop)}/admin/api/2026-01/webhooks.json",
-                 "X-Shopify-Access-Token": shop.access_token,
+                 "X-Shopify-Access-Token": access_token,
                  "Content-Type": "application/json"
                ),
              {:ok, %{webhooks: webhooks}} <- Jason.decode(body, keys: :atoms) do
@@ -156,7 +361,8 @@ defmodule Shopifex.ShopsContext do
       end
 
       defp create_webhook(shop, topic) do
-        with {:ok, %HTTPoison.Response{status_code: 201, body: body}} <-
+        with {:ok, access_token} <- get_access_token(shop),
+             {:ok, %HTTPoison.Response{status_code: 201, body: body}} <-
                HTTPoison.post(
                  "https://#{get_url(shop)}/admin/api/2026-01/webhooks.json",
                  Jason.encode!(%{
@@ -166,7 +372,7 @@ defmodule Shopifex.ShopsContext do
                      format: "json"
                    }
                  }),
-                 "X-Shopify-Access-Token": shop.access_token,
+                 "X-Shopify-Access-Token": access_token,
                  "Content-Type": "application/json"
                ),
              {:ok, %{webhook: webhook}} <- Jason.decode(body, keys: :atoms) do
@@ -175,11 +381,13 @@ defmodule Shopifex.ShopsContext do
       end
 
       def delete_webhook(shop, id) do
-        HTTPoison.delete(
-          "https://#{get_url(shop)}/admin/api/2026-01/webhooks/#{id}.json",
-          "X-Shopify-Access-Token": shop.access_token,
-          "Content-Type": "application/json"
-        )
+        with {:ok, access_token} <- get_access_token(shop) do
+          HTTPoison.delete(
+            "https://#{get_url(shop)}/admin/api/2026-01/webhooks/#{id}.json",
+            "X-Shopify-Access-Token": access_token,
+            "Content-Type": "application/json"
+          )
+        end
       end
 
       @doc """
@@ -394,6 +602,28 @@ defmodule Shopifex.ShopsContext do
                      get_url: 1,
                      get_scope: 1,
                      get_scope_field: 0,
+                     get_url_field: 0,
+                     get_refresh_token_field: 0,
+                     get_access_token_expires_at_field: 0,
+                     get_refresh_token_expires_at_field: 0,
+                     reload_shop: 1,
+                     get_refresh_token: 1,
+                     get_access_token_expires_at: 1,
+                     get_refresh_token_expires_at: 1,
+                     expiring_access_token?: 1,
+                     refresh_token_expired?: 1,
+                     refresh_token_expired?: 2,
+                     access_token_expiring?: 1,
+                     access_token_expiring?: 2,
+                     access_token_expiring?: 3,
+                     access_token_expired?: 1,
+                     access_token_expired?: 2,
+                     ensure_fresh_access_token: 1,
+                     get_access_token: 1,
+                     get_access_token!: 1,
+                     refresh_access_token: 1,
+                     token_params_to_shop_params: 1,
+                     with_access_token_refresh_lock: 2,
                      create_shop: 1,
                      update_shop: 2,
                      delete_shop: 1,
