@@ -17,7 +17,7 @@ defmodule ShopifexWeb.Routes do
   @doc """
   Injects the following Shopify router pipelines into your Shopifex application's router.
 
-  - `:shopifex_browser`: Same as your normal :browser pipeline, except it calls Shopifex.Plug.LoadInIframe.
+  - `:shopifex_browser`: Same as your normal :browser pipeline, except it calls Shopifex.Plug.LoadInIframe, which removes the `x-frame-options` header and the `frame-ancestors 'self'` CSP directive that `put_secure_browser_headers` sets.
   - `:managed_install`: Runs `Shopifex.Plug.ManagedInstall` — verifies Shopify's `id_token`, exchanges it for an expiring offline access token, and builds the session. Included in `auth_routes/1` before `:shopify_session`.
   - `:shopify_session`: Verifies the App Bridge session token (`id_token`), or the legacy install HMAC, and makes session information available via Shopifex.Plug API. No-ops when an earlier `:managed_install` already loaded the shop. Also removes iFrame blocking headers so app can render in Shopify admin.
   - `:validate_install_hmac`: Runs `Shopifex.Plug.ValidateHmac` only. Used by the legacy OAuth `/auth/install` and `/auth/update` routes, which verify the query HMAC without loading a shop into the session.

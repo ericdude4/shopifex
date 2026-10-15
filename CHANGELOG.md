@@ -302,6 +302,15 @@ branch has been published to Hex yet (the latest published release is 2.4.0).
 
 ### Fixed
 
+- **Embedded pages render inside the Shopify admin again on Phoenix 1.8.**
+  Phoenix 1.8's `put_secure_browser_headers/2` adds
+  `content-security-policy: base-uri 'self'; frame-ancestors 'self';`, and
+  `Shopifex.Plug.LoadInIframe` only deleted `x-frame-options`. Browsers enforce
+  every CSP header, so that header blocked the admin iframe ("refused to
+  connect") alongside the `frame-ancestors` policy `Shopifex.Plug.SetCSPHeader`
+  adds. `LoadInIframe` now also drops the `frame-ancestors` directive from each
+  `content-security-policy` header, keeping its other directives.
+
 - **`Shopifex.Plug.EnsureScopes` normalises scope lists before comparing
   them.** `config :shopifex, :scopes` and the shop's stored `scope` were split
   with a bare `String.split/2`, so an empty `:scopes` config raised on every
