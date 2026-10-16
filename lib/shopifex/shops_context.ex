@@ -32,39 +32,27 @@ defmodule Shopifex.ShopsContext do
         Map.get(shop, get_scope_field())
       end
 
-      defp get_url_field() do
-        # TODO: dont check for defaults in v3.0
-        if Keyword.has_key?(shop_schema().__info__(:functions), :shopifex_url_field) do
-          shop_schema().shopifex_url_field()
-        else
-          :url
-        end
-      end
+      defp get_url_field(), do: shopifex_schema_opt(:shopifex_url_field, :url)
 
-      def get_scope_field() do
-        # TODO: dont check for defaults in v3.0
-        if Keyword.has_key?(shop_schema().__info__(:functions), :shopifex_scope_field) do
-          shop_schema().shopifex_scope_field()
-        else
-          :scope
-        end
-      end
+      def get_scope_field(), do: shopifex_schema_opt(:shopifex_scope_field, :scope)
 
-      defp get_filters() do
-        # TODO: dont check for defaults in v3.0
-        if Keyword.has_key?(shop_schema().__info__(:functions), :shopifex_filters) do
-          shop_schema().shopifex_filters()
-        else
-          []
-        end
-      end
+      defp get_filters(), do: shopifex_schema_opt(:shopifex_filters, [])
 
-      defp get_preloads() do
-        # TODO: dont check for defaults in v3.0
-        if Keyword.has_key?(shop_schema().__info__(:functions), :shopifex_preloads) do
-          shop_schema().shopifex_preloads()
+      defp get_preloads(), do: shopifex_schema_opt(:shopifex_preloads, [])
+
+      # A shop schema can use the default field names (`:url`/`:scope`, what
+      # `mix shopifex.install` generates) or opt into custom names/filters/preloads
+      # via `use Shopifex.Shop`, which injects `shopifex_*_field/0` accessors. Both
+      # are supported: use the accessor when the schema defines it, otherwise fall
+      # back to the documented default. `Code.ensure_loaded?/1` keeps this correct
+      # even if the schema module hasn't been loaded yet.
+      defp shopifex_schema_opt(fun, default) do
+        schema = shop_schema()
+
+        if Code.ensure_loaded?(schema) and function_exported?(schema, fun, 0) do
+          apply(schema, fun, [])
         else
-          []
+          default
         end
       end
 
@@ -101,85 +89,170 @@ defmodule Shopifex.ShopsContext do
       end
 
       @doc """
-      Check the webhooks set on the shop, then compare that to the required webhooks based on the current
-      status of the shop.
+      Ensures the shop is subscribed to every topic in
+      `config :shopifex, :webhook_topics`, creating any that are missing via the
+      GraphQL `webhookSubscriptionCreate` mutation.
 
-      Returns a list of webhooks which were created.
+      Returns a list of the webhooks which were created (with app-facing
+      REST-style topic strings, e.g. `"orders/create"`).
       """
       def configure_webhooks(shop) do
-        with {:ok, current_webhooks} <- get_current_webhooks(shop) do
-          current_webhook_topics = Enum.map(current_webhooks, & &1.topic)
+        case Application.fetch_env!(:shopifex, :webhook_topics) do
+          [] ->
+            # Nothing desired: skip the GraphQL round-trip entirely rather
+            # than fetching current subscriptions just to reconcile against
+            # an empty set.
+            []
 
-          Logger.info(
-            "All current webhook topics for #{get_url(shop)}: #{Enum.join(current_webhook_topics, ", ")}"
-          )
+          desired_topics ->
+            with {:ok, current_webhooks} <- get_current_webhooks(shop) do
+              current_topics = current_webhooks |> Enum.map(& &1.topic) |> MapSet.new()
 
-          current_webhook_topics = MapSet.new(current_webhook_topics)
+              Logger.info(
+                "All current webhook topics for #{get_url(shop)}: #{Enum.join(MapSet.to_list(current_topics), ", ")}"
+              )
 
-          topics = MapSet.new(Application.fetch_env!(:shopifex, :webhook_topics))
+              Enum.reduce(desired_topics, [], fn topic, acc ->
+                if MapSet.member?(current_topics, webhook_topic_to_graphql(topic)) do
+                  acc
+                else
+                  Logger.info("Subscribing to topic #{topic}")
 
-          # Make sure all the required topics are configured.
-          subscribe_to_topics = MapSet.difference(topics, current_webhook_topics)
+                  case create_webhook(shop, topic) do
+                    {:ok, webhook} ->
+                      [webhook | acc]
 
-          Enum.reduce(subscribe_to_topics, [], fn topic, acc ->
-            Logger.info("Subscribing to topic #{topic}")
-
-            case create_webhook(shop, topic) do
-              {:ok, webhook} ->
-                [webhook | acc]
-
-              error ->
-                Logger.info("Error subscribing to topic #{topic}: \n#{inspect(error)}")
-                acc
+                    error ->
+                      Logger.info("Error subscribing to topic #{topic}: \n#{inspect(error)}")
+                      acc
+                  end
+                end
+              end)
             end
-          end)
         end
       end
 
       @doc """
-      Returns the current webhooks for a Shop from the Shopify API.
+      Returns the shop's current webhook subscriptions via the GraphQL
+      `webhookSubscriptions` query.
 
-      Returns with `{:ok, webhooks}` on success. Can also return any
-      non-200 level HTTPoison response, or a Jason decode error.
+      Topics come back as Shopify GraphQL enum values (e.g. `"ORDERS_CREATE"`),
+      which is the authoritative form `configure_webhooks/1` compares against.
+
+      Returns `{:ok, webhooks}` on success.
       """
       @spec get_current_webhooks(shop :: shop()) :: {:ok, list()} | any()
       def get_current_webhooks(shop) do
-        with {:ok, %HTTPoison.Response{status_code: 200, body: body}} <-
-               HTTPoison.get(
-                 "https://#{get_url(shop)}/admin/api/2026-01/webhooks.json",
-                 "X-Shopify-Access-Token": shop.access_token,
-                 "Content-Type": "application/json"
-               ),
-             {:ok, %{webhooks: webhooks}} <- Jason.decode(body, keys: :atoms) do
-          {:ok, webhooks}
+        # 250 is Shopify's maximum page size. Shopifex registers one
+        # subscription per configured topic and this list is per app and per
+        # shop, so a single page covers every supported configuration; the
+        # query is not paginated.
+        query = """
+        query {
+          webhookSubscriptions(first: 250) {
+            edges {
+              node {
+                id
+                topic
+              }
+            }
+          }
+        }
+        """
+
+        case Shopifex.API.graphql(shop, query) do
+          {:ok, %{"webhookSubscriptions" => %{"edges" => edges}}} ->
+            {:ok,
+             Enum.map(edges, fn %{"node" => %{"id" => id, "topic" => topic}} ->
+               %{id: id, topic: topic}
+             end)}
+
+          other ->
+            other
         end
       end
 
       defp create_webhook(shop, topic) do
-        with {:ok, %HTTPoison.Response{status_code: 201, body: body}} <-
-               HTTPoison.post(
-                 "https://#{get_url(shop)}/admin/api/2026-01/webhooks.json",
-                 Jason.encode!(%{
-                   webhook: %{
-                     topic: topic,
-                     address: "#{Application.get_env(:shopifex, :webhook_uri)}",
-                     format: "json"
-                   }
-                 }),
-                 "X-Shopify-Access-Token": shop.access_token,
-                 "Content-Type": "application/json"
-               ),
-             {:ok, %{webhook: webhook}} <- Jason.decode(body, keys: :atoms) do
-          {:ok, webhook}
+        mutation = """
+        mutation webhookSubscriptionCreate($topic: WebhookSubscriptionTopic!, $webhookSubscription: WebhookSubscriptionInput!) {
+          webhookSubscriptionCreate(topic: $topic, webhookSubscription: $webhookSubscription) {
+            webhookSubscription {
+              id
+            }
+            userErrors {
+              field
+              message
+            }
+          }
+        }
+        """
+
+        variables = %{
+          topic: webhook_topic_to_graphql(topic),
+          webhookSubscription: %{
+            callbackUrl: Application.get_env(:shopifex, :webhook_uri),
+            format: "JSON"
+          }
+        }
+
+        case Shopifex.API.graphql(shop, mutation, variables) do
+          {:ok,
+           %{
+             "webhookSubscriptionCreate" => %{
+               "userErrors" => [],
+               "webhookSubscription" => %{"id" => id}
+             }
+           }} ->
+            {:ok, %{id: id, topic: topic}}
+
+          {:ok, %{"webhookSubscriptionCreate" => %{"userErrors" => errors}}} ->
+            {:error, errors}
+
+          other ->
+            other
         end
       end
 
+      @doc """
+      Deletes a webhook subscription by its GraphQL ID via
+      `webhookSubscriptionDelete`.
+      """
       def delete_webhook(shop, id) do
-        HTTPoison.delete(
-          "https://#{get_url(shop)}/admin/api/2026-01/webhooks/#{id}.json",
-          "X-Shopify-Access-Token": shop.access_token,
-          "Content-Type": "application/json"
-        )
+        mutation = """
+        mutation webhookSubscriptionDelete($id: ID!) {
+          webhookSubscriptionDelete(id: $id) {
+            deletedWebhookSubscriptionId
+            userErrors {
+              field
+              message
+            }
+          }
+        }
+        """
+
+        case Shopifex.API.graphql(shop, mutation, %{id: id}) do
+          {:ok,
+           %{
+             "webhookSubscriptionDelete" => %{
+               "userErrors" => [],
+               "deletedWebhookSubscriptionId" => deleted_id
+             }
+           }} ->
+            {:ok, deleted_id}
+
+          {:ok, %{"webhookSubscriptionDelete" => %{"userErrors" => errors}}} ->
+            {:error, errors}
+
+          other ->
+            other
+        end
+      end
+
+      # Shopify GraphQL webhook topics are uppercase enums with "/" and "."
+      # replaced by "_" (e.g. "orders/create" -> "ORDERS_CREATE",
+      # "customers/data_request" -> "CUSTOMERS_DATA_REQUEST").
+      defp webhook_topic_to_graphql(topic) do
+        topic |> String.replace(["/", "."], "_") |> String.upcase()
       end
 
       @doc """

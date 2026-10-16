@@ -12,7 +12,7 @@ defmodule Mix.Shopifex.Schema do
     @foreign_key_type :binary_id<% end %>
     schema <%= inspect schema.table %> do
       <%= for {k, v} <- schema.attrs do %>field <%= inspect k %>, <%= inspect (if v == :bigint do :integer else v end) %>
-      <% end %><%= for {k, v, o} <- schema.attrs do %>field <%= inspect k %>, <%= inspect (if v == :bigint do :integer else v end) %>, <%= inspect o %>
+      <% end %><%= for {k, v, o} <- schema.attrs do %>field <%= inspect k %>, <%= inspect (if v == :bigint do :integer else v end) %><%= (field_opts = Keyword.delete(o, :null); if field_opts == [], do: "", else: ", " <> inspect(field_opts)) %>
       <% end %><%= for assoc <- schema.assocs do %>
       <%= assoc.type %> <%= inspect assoc.relation %>, <%= inspect assoc.related_schema %>, foreign_key: <%= inspect assoc.foreign_key %>
       <% end %>
@@ -22,19 +22,8 @@ defmodule Mix.Shopifex.Schema do
     @doc false
     def changeset(<%= schema.var_name %>, attrs) do
       <%= schema.var_name %>
-      |> cast(attrs, <%= inspect Enum.map(schema.attrs, fn
-        {k, _, _} -> k
-        {k, _} -> k
-      end) %>)
-      |> validate_required( <%= inspect Enum.map(schema.attrs, fn
-        {k, _, opts} ->
-          if Keyword.get(opts, :null, false) do
-            nil
-          else
-            k
-          end
-        {k, _} -> k
-      end) |> Enum.reject(& is_nil(&1)) %>)
+      |> cast(attrs, <%= inspect schema.cast_fields %>)
+      |> validate_required(<%= inspect schema.required_fields %>)
     end
   end
   """
@@ -67,9 +56,16 @@ defmodule Mix.Shopifex.Schema do
       module = Module.concat([app_base, context, module])
       binary_id = Keyword.get(opts, :binary_id, false)
 
-      attrs =
-        schema.attrs()
-        |> Kernel.++(Mix.Shopifex.Migration.attrs_from_assocs(schema.assocs(), namespace))
+      # Association-derived attrs (e.g. `shop_id`) are never emitted as
+      # `field`s below -- the `belongs_to`/`has_many` block already declares
+      # that column. They still need to be castable and (for belongs_to)
+      # required, so they're merged in for `cast_fields`/`required_fields`
+      # only, kept separate from the `field`-emitting `attrs`.
+      attrs = schema.attrs()
+
+      assoc_fields =
+        Mix.Shopifex.Migration.attrs_from_assocs(schema.assocs(), namespace)
+        |> Enum.map(&elem(&1, 0))
 
       assocs =
         schema.assocs()
@@ -83,6 +79,8 @@ defmodule Mix.Shopifex.Schema do
             var_name: var_name,
             binary_id: binary_id,
             attrs: attrs,
+            cast_fields: cast_fields(attrs, assoc_fields),
+            required_fields: required_fields(attrs, assoc_fields),
             assocs: assocs
           },
           otp_app: context_app
@@ -111,6 +109,20 @@ defmodule Mix.Shopifex.Schema do
     dir
     |> Path.join(file)
     |> Generator.create_file(content)
+  end
+
+  defp cast_fields(attrs, assoc_fields) do
+    Enum.map(attrs, &elem(&1, 0)) ++ assoc_fields
+  end
+
+  defp required_fields(attrs, assoc_fields) do
+    attrs
+    |> Enum.map(fn
+      {k, _, opts} -> if Keyword.get(opts, :null, false), do: nil, else: k
+      {k, _} -> k
+    end)
+    |> Enum.reject(&is_nil/1)
+    |> Kernel.++(assoc_fields)
   end
 
   defp build_assoc({:belongs_to, field, related_table}, app_base, namespace, _context) do

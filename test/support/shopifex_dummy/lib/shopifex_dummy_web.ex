@@ -19,32 +19,26 @@ defmodule ShopifexDummyWeb do
 
   def controller do
     quote do
-      use Phoenix.Controller, namespace: ShopifexDummyWeb
+      use Phoenix.Controller, formats: [:html, :json]
 
       import Plug.Conn
       import ShopifexDummyWeb.Gettext
-      alias ShopifexDummyWeb.Router.Helpers, as: Routes
     end
   end
 
-  def view do
+  def html do
     quote do
-      use Phoenix.View,
-        root: "test/support/shopifex_dummy/lib/shopifex_dummy_web/templates",
-        namespace: ShopifexDummyWeb
+      use Phoenix.Component
 
-      # Import convenience functions from controllers
-      import Phoenix.Controller,
-        only: [get_flash: 1, get_flash: 2, view_module: 1, view_template: 1]
+      import Phoenix.Controller, only: [get_csrf_token: 0]
 
-      # Include shared imports and aliases for views
-      unquote(view_helpers())
+      unquote(html_helpers())
     end
   end
 
   def router do
     quote do
-      use Phoenix.Router
+      use Phoenix.Router, helpers: false
 
       import Plug.Conn
       import Phoenix.Controller
@@ -58,18 +52,10 @@ defmodule ShopifexDummyWeb do
     end
   end
 
-  defp view_helpers do
+  defp html_helpers do
     quote do
-      # Use all HTML functionality (forms, tags, etc)
       import Phoenix.HTML
-      import Phoenix.HTML.Form
-      use PhoenixHTMLHelpers
-
-      # Import basic rendering functionality (render, render_layout, etc)
-      import Phoenix.View
-
       import ShopifexDummyWeb.Gettext
-      alias ShopifexDummyWeb.Router.Helpers, as: Routes
     end
   end
 

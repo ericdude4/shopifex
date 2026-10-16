@@ -5,7 +5,7 @@ defmodule Shopifex.MixProject do
     [
       app: :shopifex,
       version: "2.4.0",
-      elixir: "~> 1.10",
+      elixir: "~> 1.15",
       start_permanent: Mix.env() == :prod,
       compilers: Mix.compilers(),
       deps: deps(),
@@ -19,7 +19,8 @@ defmodule Shopifex.MixProject do
         links: %{
           "GitHub" => "https://github.com/ericdude4/shopifex"
         },
-        files: ~w(lib priv LICENSE mix.exs README.md )
+        files:
+          ~w(lib LICENSE mix.exs README.md CHANGELOG.md docs/parity-matrix.md docs/upgrading.md)
       ],
       # Docs
       name: "Shopifex",
@@ -29,7 +30,7 @@ defmodule Shopifex.MixProject do
         # The main page in the docs
         main: "Shopifex",
         logo: "guides/images/s.png",
-        extras: ["README.md"],
+        extras: ["README.md", "CHANGELOG.md", "docs/parity-matrix.md", "docs/upgrading.md"],
         filter_prefix: "Shopifex"
       ]
     ]
@@ -50,22 +51,20 @@ defmodule Shopifex.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:phoenix, ">= 1.6.0"},
-      {:phoenix_html_helpers, "~> 1.0"},
+      {:phoenix, "~> 1.8"},
+      {:phoenix_live_view, "~> 1.0"},
       {:phoenix_ecto, "~> 4.6"},
-      {:phoenix_view, "~> 2.0"},
       {:ecto_sql, "~> 3.12"},
-      {:postgrex, ">= 0.0.0"},
+      # The library itself never calls Postgrex; it's only needed to run the
+      # dummy app's repo in dev/test. Downstream apps bring their own driver.
+      {:postgrex, ">= 0.0.0", only: [:dev, :test]},
       {:phoenix_html, ">= 4.0.0"},
       {:gettext, "~> 1.0"},
       {:jason, "~> 1.0"},
-      {:plug_cowboy, "~> 2.0"},
-      {:ex_doc, "~> 0.14", only: :dev, runtime: false},
-      {:guardian, "~> 2.0"},
-      {:neuron, "~> 5.1.0"},
-      {:cors_plug, "~> 2.0"},
-      {:httpoison, "~> 2.3"},
-      {:exvcr, "~> 0.17", only: :test}
+      {:jose, "~> 1.11"},
+      {:ex_doc, "~> 0.34", only: :dev, runtime: false},
+      {:cors_plug, "~> 2.0 or ~> 3.0"},
+      {:req, "~> 0.5"}
     ]
   end
 

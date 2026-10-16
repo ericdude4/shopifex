@@ -17,4 +17,10 @@ defmodule ShopifexDummyWeb.Router do
 
     post("/", WebhookController, :action)
   end
+
+  scope "/proxy", ShopifexDummyWeb do
+    pipe_through([:shopify_proxy])
+
+    get("/", ProxyController, :show)
+  end
 end

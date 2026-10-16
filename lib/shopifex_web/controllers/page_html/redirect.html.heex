@@ -1,0 +1,30 @@
+<s-page heading="Redirecting…">
+  <s-section>
+    <s-paragraph>{@message}</s-paragraph>
+    <s-paragraph>
+      If you are not redirected automatically, <a href="#" id="shopifex-redirect-link">click here</a>.
+    </s-paragraph>
+  </s-section>
+</s-page>
+
+<script>
+  (function () {
+    var url = <%= raw(Jason.encode!(@redirect_location, escape: :html_safe)) %>;
+
+    function go(e) {
+      if (e) { e.preventDefault(); }
+      if (window.top === window.self) {
+        window.location.href = url;
+      } else {
+        // App Bridge intercepts top-level navigation out of the embedded iframe.
+        open(url, "_top");
+      }
+    }
+
+    document.addEventListener("DOMContentLoaded", function () {
+      var link = document.getElementById("shopifex-redirect-link");
+      if (link) { link.addEventListener("click", go); }
+      go();
+    });
+  })();
+</script>

@@ -1,16 +1,15 @@
 defmodule ShopifexWeb do
   @moduledoc """
-  The entrypoint for shopifex web interface, such
-  as controllers, views, channels and so on.
+  The entrypoint for the Shopifex web interface — controllers and
+  function-component HTML modules.
 
   This can be used in your application as:
 
       use ShopifexWeb, :controller
-      use ShopifexWeb, :view
+      use ShopifexWeb, :html
 
-  The definitions below will be executed for every view,
-  controller, etc, so keep them short and clean, focused
-  on imports, uses and aliases.
+  The definitions below will be executed for every controller / HTML module,
+  so keep them short and clean, focused on imports, uses and aliases.
 
   Do NOT define functions inside the quoted expressions
   below. Instead, define any helper function in modules
@@ -18,51 +17,39 @@ defmodule ShopifexWeb do
   """
 
   def controller do
-    web_module = Application.get_env(:shopifex, :web_module)
-
     quote do
-      use Phoenix.Controller, namespace: ShopifexWeb
+      use Phoenix.Controller, formats: [:html, :json]
       use Gettext, backend: ShopifexWeb.Gettext
 
       import Plug.Conn
-      alias unquote(web_module).Router.Helpers, as: Routes
-    end
-  end
-
-  def view do
-    quote do
-      use Phoenix.View,
-        root: "lib/shopifex_web/templates",
-        namespace: ShopifexWeb
-
-      # Import convenience functions from controllers
-      import Phoenix.Controller, only: [get_flash: 1, get_flash: 2, view_module: 1]
-
-      # Include shared imports and aliases for views
-      unquote(view_helpers())
-    end
-  end
-
-  defp view_helpers do
-    web_module = Application.get_env(:shopifex, :web_module)
-
-    quote do
-      # Use all HTML functionality (forms, tags, etc)
-      import Phoenix.HTML
-      import Phoenix.HTML.Form
-      use PhoenixHTMLHelpers
-      use Gettext, backend: ShopifexWeb.Gettext
-
-      # Import basic rendering functionality (render, render_layout, etc)
-      import Phoenix.View
-
-      import ShopifexWeb.ErrorHelpers
-      alias unquote(web_module).Router.Helpers, as: Routes
     end
   end
 
   @doc """
-  When used, dispatch to the appropriate controller/view/etc.
+  HTML rendering — Phoenix 1.7+ function components. `use ShopifexWeb, :html`
+  brings in `Phoenix.Component` (`~H`, `embed_templates`, `attr/3`) plus the
+  HTML helpers shared across Shopifex's `*HTML` modules and layouts.
+  """
+  def html do
+    quote do
+      use Phoenix.Component
+
+      # Import convenience functions from controllers
+      import Phoenix.Controller, only: [get_csrf_token: 0]
+
+      unquote(html_helpers())
+    end
+  end
+
+  defp html_helpers do
+    quote do
+      use Gettext, backend: ShopifexWeb.Gettext
+      import Phoenix.HTML
+    end
+  end
+
+  @doc """
+  When used, dispatch to the appropriate controller / html helper.
   """
   defmacro __using__(which) when is_atom(which) do
     apply(__MODULE__, which, [])

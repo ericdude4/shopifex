@@ -3,7 +3,13 @@ defmodule Mix.Shopifex.Shop do
     do: [
       {:url, :string},
       {:access_token, :string},
-      {:scope, :string}
+      # Nullable so legacy / non-expiring installs round-trip. `null: true`
+      # drives both the migration column nullability and skipping the field
+      # in the generated `validate_required/2`.
+      {:scope, :string, [null: true]},
+      {:token_expires_at, :utc_datetime, [null: true]},
+      {:refresh_token, :string, [null: true]},
+      {:refresh_token_expires_at, :utc_datetime, [null: true]}
     ]
 
   def assocs(),

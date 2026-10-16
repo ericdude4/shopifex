@@ -1,0 +1,66 @@
+<% current_grants = current_grant_list(@conn) %>
+
+<s-page heading="Payment options">
+  <s-section>
+    <s-paragraph>Select a plan to continue.</s-paragraph>
+  </s-section>
+
+  <s-section :for={plan <- plans_for_guard(@conn, @guard)} heading={plan.name}>
+    <s-paragraph>{price_label(plan)}</s-paragraph>
+    <ul>
+      <li :for={feature <- List.wrap(plan.features)}>{feature}</li>
+    </ul>
+    <% is_current = current_plan?(current_grants, plan) %>
+    <button type="button" data-plan-id={plan.id} disabled={is_current}>
+      {if is_current, do: "Current plan", else: "Select"}
+    </button>
+  </s-section>
+</s-page>
+
+<script>
+  (function () {
+    var route = <%= raw(Jason.encode!(select_plan_path(@conn), escape: :html_safe)) %>;
+    var redirectAfter = <%= raw(Jason.encode!(@redirect_after, escape: :html_safe)) %>;
+
+    document.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-plan-id]");
+      if (!btn || btn.disabled) { return; }
+      btn.disabled = true;
+
+      // Inside the Shopify admin, App Bridge authenticates this fetch with its
+      // Bearer id_token; outside it, the path-bound redirect_token on the
+      // route's URL does.
+      fetch(route, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          plan_id: btn.getAttribute("data-plan-id"),
+          redirect_after: redirectAfter
+        })
+      })
+        .then(function (r) {
+          if (!r.ok) {
+            return r.json().then(function (err) {
+              btn.disabled = false;
+              alert((err && err.errors && JSON.stringify(err.errors)) || "Failed to select plan");
+            }).catch(function () {
+              btn.disabled = false;
+              alert("Failed to select plan");
+            });
+          }
+          return r.json().then(function (charge) {
+            if (charge && charge.confirmation_url) {
+              // Break out of the iframe to Shopify's charge-approval screen.
+              open(charge.confirmation_url, "_top");
+            } else {
+              btn.disabled = false;
+            }
+          });
+        })
+        .catch(function (err) {
+          btn.disabled = false;
+          alert("Network error: " + err.message);
+        });
+    });
+  })();
+</script>

@@ -29,41 +29,49 @@ defmodule Shopifex.Plug.PaymentGuard do
   @doc """
   This makes sure the shop in the session contains a payment which unlocks the guard.
 
-  If no payment is present which unlocks the guard, the conn will be redirected to your
-  application's PaymentController.show_plans route.
+  If no payment is present which unlocks the guard (or remaining usages are exhausted),
+  the conn will be redirected to your application's PaymentController.show_plans route.
   """
   def call(conn, guard_identifier) do
     payment_guard = Application.fetch_env!(:shopifex, :payment_guard)
-
     shop = Shopifex.Plug.current_shop(conn)
 
-    case payment_guard.grant_for_guard(shop, guard_identifier) do
-      nil ->
+    with grant when not is_nil(grant) <- payment_guard.grant_for_guard(shop, guard_identifier),
+         updated_grant when not is_nil(updated_grant) <- payment_guard.use_grant(shop, grant) do
+      Plug.Conn.put_private(conn, :grant_for_guard, updated_grant)
+    else
+      _ ->
         Logger.info("Payment guard blocked request")
         redirect_after = URI.encode_www_form("#{conn.request_path}?#{conn.query_string}")
 
-        show_plans_url =
-          router_helpers().payment_path(conn, :show_plans, %{
-            guard_identifier: guard_identifier,
-            redirect_after: redirect_after,
-            token: Shopifex.Plug.session_token(conn)
-          })
+        prefix = Application.get_env(:shopifex, :path_prefix, "")
+        show_plans_path = "#{prefix}/payment/show-plans"
+
+        # A request authenticated without an App Bridge `id_token` (legacy HMAC
+        # / non-embedded) has nothing to forward, so the redirect carries a
+        # short-lived token bound to the plans path — accepted by ShopifySession
+        # there and nowhere else, so a captured link cannot be replayed on other
+        # routes or used to mint a fresh credential. An `id_token`, when present,
+        # is forwarded as `token` and tried first.
+        params =
+          %{
+            "guard_identifier" => guard_identifier,
+            "redirect_after" => redirect_after
+          }
+          |> maybe_put("token", Shopifex.Plug.session_token(conn))
+          |> maybe_put("redirect_token", redirect_token(shop, show_plans_path))
 
         conn
-        |> Phoenix.Controller.redirect(to: show_plans_url)
+        |> Phoenix.Controller.redirect(to: "#{show_plans_path}?#{URI.encode_query(params)}")
         |> Plug.Conn.halt()
-
-      grant_for_guard ->
-        grant_for_guard = payment_guard.use_grant(shop, grant_for_guard)
-        Plug.Conn.put_private(conn, :grant_for_guard, grant_for_guard)
     end
   end
 
-  defp router_helpers(),
-    do:
-      Module.concat([
-        Application.get_env(:shopifex, :web_module, ShopifexWeb),
-        Router,
-        Helpers
-      ])
+  defp maybe_put(params, _key, nil), do: params
+  defp maybe_put(params, key, value), do: Map.put(params, key, value)
+
+  defp redirect_token(nil, _path), do: nil
+
+  defp redirect_token(shop, path),
+    do: Shopifex.Plug.sign_redirect(Shopifex.Shops.get_url(shop), path)
 end

@@ -7,7 +7,10 @@ defmodule Mix.Shopifex.Plan do
       {:grants, {:array, :string}},
       {:test, :boolean, default: false},
       {:trial_days, :integer, default: 0},
-      {:usages, :integer},
+      # Nullable: unlimited plans have no usage cap. `null: true` drives both
+      # the migration column nullability and skipping the field in the
+      # generated `validate_required/2`.
+      {:usages, :integer, [null: true]},
       {:type, :string}
     ]
 

@@ -14,7 +14,10 @@ config :shopifex,
 config :shopifex, ShopifexDummyWeb.Endpoint,
   url: [host: "localhost"],
   secret_key_base: "AJifLO3O2O9g5ZbqKyGNPEklxuNA8BIIqXTWYU+wxgdTEvzjHbz1FUj0scAX647D",
-  render_errors: [view: ShopifexDummyWeb.ErrorView, accepts: ~w(html json), layout: false],
+  render_errors: [
+    formats: [html: ShopifexDummyWeb.ErrorHTML, json: ShopifexDummyWeb.ErrorJSON],
+    layout: false
+  ],
   pubsub_server: ShopifexDummy.PubSub,
   live_view: [signing_salt: "PSZGj+FT"]
 

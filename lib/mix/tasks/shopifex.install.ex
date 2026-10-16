@@ -2,7 +2,7 @@ defmodule Mix.Tasks.Shopifex.Install do
   @shortdoc "Installs Shopifex"
 
   @moduledoc """
-  Generates migrations, schema module files, and updates config.
+  Generates migrations, schema module files, and prints the config to add.
         mix shopifex.install
   ## Arguments
     * `--context-app` - context app to use for path and module names
@@ -109,7 +109,8 @@ defmodule Mix.Tasks.Shopifex.Install do
       scope "/", <%= inspect app_base %>Web do
         pipe_through [:shopifex_browser, :shopify_session]
 
-        get "/", PageController, :index
+        # your landing action
+        get "/", PageController, :home
       end
 
       # Make your webhook endpoint look like this
@@ -127,18 +128,6 @@ defmodule Mix.Tasks.Shopifex.Install do
       end
     """
     |> EEx.eval_string(app_base: app_base, camel_namespace: camel_namespace)
-    |> Mix.shell().info()
-
-    print_white("Add the following to `lib/#{context_app}_web/endpoint.ex`:")
-
-    """
-    # Serve at "/shopifex-assets" the static files from shopifex.
-    plug Plug.Static,
-      at: "/shopifex-assets",
-      from: :shopifex,
-      gzip: false,
-      only: ~w(css fonts images js favicon.ico robots.txt)
-    """
     |> Mix.shell().info()
 
     config

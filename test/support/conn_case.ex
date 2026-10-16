@@ -25,8 +25,6 @@ defmodule ShopifexWeb.ConnCase do
       import ShopifexWeb.ConnCase
       import Shopifex.Fixtures
 
-      alias ShopifexDummyWeb.Router.Helpers, as: Routes
-
       # The default endpoint for testing
       @endpoint ShopifexDummyWeb.Endpoint
     end

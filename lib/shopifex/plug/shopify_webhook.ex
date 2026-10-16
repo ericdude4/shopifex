@@ -1,53 +1,90 @@
 defmodule Shopifex.Plug.ShopifyWebhook do
   @moduledoc """
-  Ensures that the connection has a valid Shopify webhook HMAC token and
-  builds Shopifex session.
+  Authenticates a Shopify request and builds the Shopifex session.
+
+  Two modes, chosen with the `:mode` plug option:
+
+    * `:webhook` (default) — a webhook `POST`. The `x-shopify-hmac-sha256`
+      header is verified against the HMAC of the **raw request body** (see
+      `Shopifex.Plug.valid_webhook_hmac?/1`). The shop is resolved from the
+      `x-shopify-shop-domain` header or the verified body — never from a
+      query/body param a caller can choose, and a query-string `hmac` is
+      ignored.
+    * `:admin_link` — an admin-link / bulk-action-link `GET`, signed like an
+      app load. The query `hmac` is verified and, when a `timestamp` is
+      present, its freshness is checked. The shop is resolved from the signed
+      query `shop` param.
+
+  The `:shopify_webhook` and `:shopify_admin_link` pipelines set the mode.
   """
   import Plug.Conn
   require Logger
 
-  def init(options) do
-    # initialize options
-    options
+  def init(options), do: Keyword.put_new(options, :mode, :webhook)
+
+  def call(conn, options) do
+    conn = fetch_query_params(conn)
+
+    case Keyword.get(options, :mode, :webhook) do
+      :admin_link -> authenticate_admin_link(conn, options)
+      _webhook -> authenticate_webhook(conn)
+    end
   end
 
-  def call(conn, _) do
-    expected_hmac = Shopifex.Plug.build_hmac(conn)
-    received_hmac = Shopifex.Plug.get_hmac(conn)
+  defp authenticate_webhook(conn) do
+    if Shopifex.Plug.valid_webhook_hmac?(conn) do
+      build_session_or_halt(conn, webhook_shop_domain(conn))
+    else
+      reject(conn)
+    end
+  end
 
-    if expected_hmac == received_hmac do
-      shop =
-        conn
-        |> get_shop_domain()
-        |> Shopifex.Shops.get_shop_by_url()
+  defp authenticate_admin_link(conn, options) do
+    with :ok <- Shopifex.Plug.validate_timestamp(conn, options),
+         true <- Shopifex.Plug.hmac_matches?(conn, Shopifex.Plug.get_hmac(conn)) do
+      build_session_or_halt(conn, conn.query_params["shop"])
+    else
+      _ -> reject(conn)
+    end
+  end
 
-      if shop do
+  defp build_session_or_halt(conn, shop_url) do
+    case shop_url && Shopifex.Shops.get_shop_by_url(shop_url) do
+      shop when not is_nil(shop) ->
         host = Map.get(conn.params, "host")
         locale = Map.get(conn.params, "locale")
         Shopifex.Plug.build_session(conn, shop, host, locale)
-      else
-        # Send 200 response so that Shopify doesn't retry the webhook for a store that doesn't exist.
+
+      _ ->
+        # 200 so Shopify stops retrying a webhook for a store we don't have.
         conn
         |> send_resp(200, "no store found with url")
         |> halt()
-      end
-    else
-      Logger.info("HMAC doesn't match " <> expected_hmac)
-
-      conn
-      |> send_resp(401, "invalid hmac signature")
-      |> halt()
     end
   end
 
-  defp get_shop_domain(%Plug.Conn{params: %{"myshopify_domain" => shop_url}}), do: shop_url
-  defp get_shop_domain(%Plug.Conn{params: %{"shop" => shop_url}}), do: shop_url
+  # Prefer Shopify's dedicated header; fall back to the HMAC-verified body.
+  # Never the merged `conn.params`, whose value a caller can shadow from the
+  # request body.
+  defp webhook_shop_domain(conn) do
+    case get_req_header(conn, "x-shopify-shop-domain") do
+      [shop_url] when is_binary(shop_url) ->
+        shop_url
 
-  defp get_shop_domain(%Plug.Conn{} = conn) do
-    with [shop_url] <- Plug.Conn.get_req_header(conn, "x-shopify-shop-domain") do
-      shop_url
-    else
-      _ -> nil
+      _ ->
+        case conn.body_params do
+          %{"myshopify_domain" => shop_url} when is_binary(shop_url) -> shop_url
+          %{"shop" => shop_url} when is_binary(shop_url) -> shop_url
+          _ -> nil
+        end
     end
+  end
+
+  defp reject(conn) do
+    Logger.info("Rejecting webhook with invalid HMAC")
+
+    conn
+    |> send_resp(401, "invalid hmac signature")
+    |> halt()
   end
 end

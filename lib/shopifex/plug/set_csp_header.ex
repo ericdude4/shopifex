@@ -19,14 +19,18 @@ defmodule Shopifex.Plug.SetCSPHeader do
   def call(conn, _) do
     case get_current_shop(conn) do
       {:ok, shop} ->
-        url = Shopifex.Shops.get_url(shop)
-        allowed_frame_ancestors = [@shopify_unified_admin_url, "https://#{url}"]
+        # admin.shopify.com (unified admin) is always allowed to frame the app.
+        # The shop's own myshopify host is added only when it's a clean hostname,
+        # so a malformed/tampered stored URL can't inject extra CSP directives
+        # (e.g. a stray `;` ending `frame-ancestors` early).
+        allowed_frame_ancestors =
+          [@shopify_unified_admin_url | shop_frame_ancestor(Shopifex.Shops.get_url(shop))]
 
-        Plug.Conn.put_resp_header(
-          conn,
-          "content-security-policy",
-          "frame-ancestors #{Enum.join(allowed_frame_ancestors, " ")};"
-        )
+        csp_header =
+          {"content-security-policy",
+           "frame-ancestors #{Enum.join(allowed_frame_ancestors, " ")};"}
+
+        Plug.Conn.prepend_resp_headers(conn, [csp_header])
 
       {:error, :no_current_shop} ->
         raise(__MODULE__,
@@ -42,4 +46,13 @@ defmodule Shopifex.Plug.SetCSPHeader do
       shop -> {:ok, shop}
     end
   end
+
+  # Only treat the stored shop URL as a frame ancestor when it's a bare hostname
+  # (letters/digits/dots/hyphens). Anything else — a scheme, path, whitespace, or
+  # a CSP-significant character — is dropped rather than interpolated.
+  defp shop_frame_ancestor(url) when is_binary(url) do
+    if Regex.match?(~r/\A[a-z0-9][a-z0-9.\-]*\z/i, url), do: ["https://#{url}"], else: []
+  end
+
+  defp shop_frame_ancestor(_), do: []
 end

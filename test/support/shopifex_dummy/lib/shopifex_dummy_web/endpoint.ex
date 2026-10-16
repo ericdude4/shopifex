@@ -10,17 +10,6 @@ defmodule ShopifexDummyWeb.Endpoint do
     signing_salt: "qb1yL9WE"
   ]
 
-  # Serve at "/" the static files from "priv/static" directory.
-  #
-  # You should set gzip to true if you are running phx.digest
-  # when deploying your static files in production.
-  plug(Plug.Static,
-    at: "/",
-    from: :shopifex,
-    gzip: false,
-    only: ~w(css fonts images js favicon.ico robots.txt)
-  )
-
   plug(Plug.RequestId)
   plug(Plug.Telemetry, event_prefix: [:phoenix, :endpoint])
 

@@ -29,7 +29,7 @@ defmodule Shopifex.PaymentGuard do
   grants in place of the first parameter in order to avoid a trip to the
   database.
   """
-  @callback grant_for_guard(shop() | [grant()], guard()) :: grant() | boolean()
+  @callback grant_for_guard(shop() | [grant()], guard()) :: grant() | nil
 
   @doc """
   Returns a list of valid grants which are associated with the store.
@@ -37,11 +37,12 @@ defmodule Shopifex.PaymentGuard do
   @callback grants_for_shop(shop()) :: [grant()]
 
   @doc """
-  Updates the grant to reflect the usage of it in some way. Defaults to decrementing
-  the `remaining_usages` property if it's not nil. If it is nil, the grant has
-  unlimited usages
+  Updates the grant to reflect the usage of it in some way. Defaults to atomically
+  decrementing the `remaining_usages` property if it's not nil, and incrementing
+  `total_usages`. If it is nil, the grant has unlimited usages and only `total_usages`
+  is incremented. Returns the updated grant, or `nil` if 0 rows were updated.
   """
-  @callback use_grant(shop(), grant()) :: grant()
+  @callback use_grant(shop(), grant()) :: grant() | nil
 
   @doc """
   After payment has been accepted, this function is meant to persist the
@@ -49,7 +50,7 @@ defmodule Shopifex.PaymentGuard do
   the external id for the Shopify charge record.
   """
   @callback create_grant(shop :: shop(), plan :: plan(), charge_id :: pos_integer()) ::
-              {:ok, any()}
+              {:ok, any()} | {:error, any()}
 
   @doc """
   Gets a plan with a given identifier
@@ -81,20 +82,33 @@ defmodule Shopifex.PaymentGuard do
 
       @impl Shopifex.PaymentGuard
       def grant_for_guard(shop, guard) when is_struct(shop) do
+        # The `shop_id`/`guard` scoping and the usage predicate must all hold
+        # together. Mixing `where`/`or_where` here would OR the usage check
+        # against the *whole* clause, dropping the shop/guard filters and
+        # matching any shop's metered grant (cross-tenant leak). Keep the
+        # `or` strictly between the two `remaining_usages` alternatives.
+        # order_by prefers unlimited grants (remaining_usages is null) over
+        # metered ones.
         from(s in grant_schema(),
-          where: s.shop_id == ^shop.id,
-          where: ^guard in s.grants,
-          where: is_nil(s.remaining_usages),
-          or_where: s.remaining_usages > 0,
+          where:
+            s.shop_id == ^shop.id and ^guard in s.grants and
+              (is_nil(s.remaining_usages) or s.remaining_usages > 0),
+          order_by: [asc_nulls_first: s.remaining_usages],
           limit: 1
         )
         |> repo().one()
       end
 
       def grant_for_guard(grants, guard) when is_list(grants) do
-        # In this case, the list of grants is being provided as input, so just search that
-        # set for a valid grant.
-        Enum.find(grants, fn grant ->
+        sorted_grants =
+          Enum.sort_by(grants, fn grant ->
+            case grant.remaining_usages do
+              nil -> {0, 0}
+              n -> {1, n}
+            end
+          end)
+
+        Enum.find(sorted_grants, fn grant ->
           guard in grant.grants and
             (is_nil(grant.remaining_usages) or grant.remaining_usages > 0)
         end)
@@ -102,10 +116,12 @@ defmodule Shopifex.PaymentGuard do
 
       @impl Shopifex.PaymentGuard
       def grants_for_shop(shop) do
+        # Same OR-precedence hazard as `grant_for_guard/2`: the `shop_id` filter
+        # must AND with the usage predicate, never OR against it.
         from(s in grant_schema(),
-          where: s.shop_id == ^shop.id,
-          where: is_nil(s.remaining_usages),
-          or_where: s.remaining_usages > 0
+          where:
+            s.shop_id == ^shop.id and
+              (is_nil(s.remaining_usages) or s.remaining_usages > 0)
         )
         |> repo().all()
       end
@@ -121,28 +137,33 @@ defmodule Shopifex.PaymentGuard do
       end
 
       @impl Shopifex.PaymentGuard
-      def use_grant(_shop, grant) do
-        grant
-        |> Changeset.change()
-        |> update_total_usages()
-        |> update_remaining_usages()
-        |> repo().update!()
+      def use_grant(_shop, %{id: grant_id, remaining_usages: nil}) do
+        query =
+          from(g in grant_schema(),
+            where: g.id == ^grant_id and is_nil(g.remaining_usages),
+            select: g
+          )
+
+        case repo().update_all(query, inc: [total_usages: 1]) do
+          {1, [updated_grant]} -> updated_grant
+          _ -> nil
+        end
       end
 
-      defp update_total_usages(%Changeset{data: %{total_usages: total_usages}} = grant) do
-        total_usages = if is_nil(total_usages), do: 0, else: total_usages
+      def use_grant(_shop, %{id: grant_id}) do
+        query =
+          from(g in grant_schema(),
+            where: g.id == ^grant_id and g.remaining_usages > 0,
+            select: g
+          )
 
-        grant
-        |> Changeset.change(%{total_usages: total_usages + 1})
+        case repo().update_all(query, inc: [total_usages: 1, remaining_usages: -1]) do
+          {1, [updated_grant]} -> updated_grant
+          _ -> nil
+        end
       end
 
-      defp update_remaining_usages(%Changeset{data: %{remaining_usages: nil}} = grant_changeset),
-        do: grant_changeset
-
-      defp update_remaining_usages(
-             %Changeset{data: %{remaining_usages: remaining_usages}} = grant_changeset
-           ),
-           do: Changeset.change(grant_changeset, %{remaining_usages: remaining_usages - 1})
+      def use_grant(_shop, _grant), do: nil
 
       @impl Shopifex.PaymentGuard
       def create_grant(shop, plan, charge_id) do

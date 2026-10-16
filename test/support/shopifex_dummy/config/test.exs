@@ -36,4 +36,4 @@ config :shopifex,
   secret: "shpss_thisisafakesecret"
 
 # Print only warnings and errors during test
-config :logger, level: :warn
+config :logger, level: :warning
